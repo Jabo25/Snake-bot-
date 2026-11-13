@@ -1,112 +1,245 @@
-'''
-This file will contain the code for your problems. 
-'''
+import threading
+import random
+import pandas as pd
+import tkinter as tk
+# import keyboard
+import time
+import algorithms as st
 
-import numpy as np
-import cv2
 
-class Game:
-    def __init__(self, problem, pZero, pOne,verbose=True):
-      self.problem = problem      
-      self.players = [pZero,pOne]   
-      self.verbose = verbose   
-      if self.verbose:
-         self.problem.showState()               
-    def playGame(self):
-      pCur=0
-      while self.problem.isTerminal()==False:           
-         move = self.players[pCur].getMove(self.problem)           
-         self.problem.doMove(move)
-         if self.verbose:
-            self.problem.showState()
-            print(f"Move {self.problem.ticks}:")
-            print(self.problem.state)
-         pCur = np.abs(pCur-1)
+# pip3 install plot
+#pip3 install pandas
+# pip3 install keyboard
+# set environment constants
+
+
+# set environment constants
+GRID_SIZE = (50,50)
+RESOLUTION = (600,600)
+SQUARE_SIZE = (RESOLUTION[0]/(GRID_SIZE[0]),RESOLUTION[1]/(GRID_SIZE[1])) #body seg size
+SPEED = 100
+EPOCHS = 100
+EPSILON = 1
+GAMMA = 0
+plot = None
+#make screen appear
+SNAKE_COLOR = "#00FF00"
+FOOD_COLOR = "#FF0000"
+BG_COLOR = "#000000"
+gameTotal = 0
+show = True
+window = tk.Tk()
+window.title("Snake Game")
+window.resizable(False, False)
+label = tk.Label(window, text=f"Score: {0} game total:{0} ", font=("Consolas", 20))
+label.pack()
+canvas = tk.Canvas(window, bg=BG_COLOR, height=RESOLUTION[1], width=RESOLUTION[0])
+canvas.pack()
+window.update()
+
+#game controller (stores current vars agent stores curr + past vars)
+snake = [(GRID_SIZE[0]/2, GRID_SIZE[1]/2)]
+tail = snake[-1]
+apple = ()
+score = 0
+direction = (0,1)
+score = 0
+gamesPlayed = 0
+
+#reset environment/restart game vars(locks)
+state = False
+gameOver = False
+
+
+#extra statistics for the snake
+agent = st.player()#make player object
+
+
+#takes keyboard inputa and moves the snake
+def getDirection(event):
+    global direction, agent
+    if(direction == "up"):
+        if event.keysym == "Left" and direction != (1, 0):
+            direction = (-1, 0)
+        elif event.keysym == "Right" and direction != (-1, 0):
+            direction = (1, 0)
+        elif event.keysym == "Up" and direction != (0, 1):
+            direction = (0, -1)
+        elif event.keysym == "Down" and direction != (0, -1):
+            direction = (0, 1)
         
-      wIndex = self.problem.getWinner()
-      winner = self.players[wIndex]
-      if wIndex == -1:
-         winner = "DRAW"
-      #display final state
-      print(f"The Winner is {winner} ({wIndex})!")
-      if self.verbose:
-         self.problem.showState(4000)
-      return wIndex
-              
-class TicTacToe:
-   def __init__(self):
-      self.state = np.zeros((3,3))      
-      self.ticks=-1      
-   def getLegalMoves(self, state=None):
-      if state is None:
-         state = self.state
-      moves = []
-      mark = 1
-      if np.sum(np.abs(state))%2!=0:
-         mark = -1       
-      for i in range(state.shape[0]):
-         for j in range(state.shape[1]):
-            if state[i,j]==0:
-               moves.append((mark,(i,j)))
-      return moves             
-   def getSuccessor(self, move, state):
-      mark = move[0]
-      loc = move[1]
-      state[loc] = mark
-      return state
-   def doMove(self,move):
-      self.state = self.getSuccessor(move,self.state)
-      self.ticks+=1
-   def isTerminal(self, state=None):
-      if state is None:
-         state = self.state         
-      terminal = False
-      val = self.evalTerminal(state)      
-      if val ==0 and np.sum(np.abs(state))==9:
-         terminal = True
-      if val!=0:
-         terminal = True
-      return terminal
-   def evalTerminal(self, state=None):
-      if state is None:
-         state = self.state
-      val = 0      
-      
-      pZeroWins = [np.max(np.sum(state,0))==3,np.max(np.sum(state,1))==3,np.trace(state)==3,np.trace(state[:,::-1])==3]
-      pOneWins = [np.min(np.sum(state,0))==-3,np.min(np.sum(state,1))==-3,np.trace(state)==-3,np.trace(state[:,::-1])==-3]
+    direction = agent.getDirection()
+    return direction
 
-      if np.any(pZeroWins):
-         val = 1
-      if np.any(pOneWins):
-         val = -1
-      return val
-   def getWinner(self, state=None):
-      if state is None:
-         state = self.state
-      val = self.evalTerminal(state)
-      if val==1:
-         return 0 
-      elif val==-1:
-         return 1
-      else:
-         return -1
-   def showState(self, ms = 1000,state=None):
-      if state is None:
-         state = self.state  
+#modes the snake in most recent direction
+def moveSnake(snake_clone, dir_clone):
+    global snake, direction, tail
 
-      screen = np.zeros((150,150)).astype(np.uint8)         
-      screen = cv2.line(screen,(0,49),(149,49),255) 
-      screen = cv2.line(screen,(0,99),(149,99),255)
-      screen = cv2.line(screen,(49,0),(49,149),255) 
-      screen = cv2.line(screen,(99,0),(99,149),255)
 
-      for i in range(state.shape[0]):
-         for j in range(state.shape[1]):
-            if state[i,j]==1:
-               screen = cv2.line(screen,(5 +j*50,5+i*50),(44+j*50,44+i*50),255,2,cv2.LINE_AA) 
-               screen = cv2.line(screen,(44+j*50,5+i*50),(5 +j*50,44+i*50),255,2,cv2.LINE_AA) 
-            if state[i,j]==-1:
-               screen = cv2.circle(screen, (25 +j*50,25+i*50), 20, 255, 2,cv2.LINE_AA) 
-               
-      cv2.imshow('TicTacToe',screen)
-      cv2.waitKey(ms)
+    head = snake[0]
+    tail = snake[-1]
+    snake.pop()
+    snake.insert(0, (head[0]+direction[0], head[1]+direction[1]))
+    if(show):
+        renderSnake(snake[0][0],snake[0][1], False)
+    return snake
+
+    
+
+#this function checks for collisions which would end the game  
+def collisionCheck(snake_clone):
+    global gameTotal
+    global snake
+    if(snake_clone == None):
+        snake_clone = snake
+    collision = False
+    for index, x in enumerate(snake_clone):
+        if index != 0:
+            if snake_clone[0] == x:
+                collision = True
+    if snake_clone[0][0] < 0 or snake_clone[0][0] >= GRID_SIZE[0] or snake_clone[0][1] < 0 or snake_clone[0][1] >= GRID_SIZE[1]:
+        collision = True
+    if collision == True:
+        gameTotal = gameTotal+1
+        print("game over")
+    return collision
+            
+#generates a new apple            
+def makeApple():
+    global apple
+    apple = (random.randint(0, GRID_SIZE[0]-1), random.randint(0, GRID_SIZE[1]-1))     
+    for x in snake:
+        if apple == x:
+            makeApple()
+            return
+
+    agent.SnakeAfterFood.append(snake)
+    agent.AppleList.append(apple)
+
+    pixel_x = SQUARE_SIZE[0] * apple[0]
+    pixel_y = SQUARE_SIZE[1] * apple[1]
+
+    if(show):
+        canvas.create_rectangle(
+            pixel_x,
+            pixel_y,
+            pixel_x + SQUARE_SIZE[0],
+            pixel_y + SQUARE_SIZE[1],
+            fill=FOOD_COLOR
+        )
+
+
+def renderSnake(x,y, remove):
+    
+    global  color
+    pixel_x = SQUARE_SIZE[0] * x
+    pixel_y = SQUARE_SIZE[1] * y
+
+    if not remove:
+        canvas.create_rectangle(
+            pixel_x,
+            pixel_y,
+            pixel_x + SQUARE_SIZE[0],
+            pixel_y + SQUARE_SIZE[1],
+            fill=SNAKE_COLOR
+        )
+    else:
+        # pygame.draw.rect(surface, (0,0,0), rect)
+        canvas.create_rectangle(
+            pixel_x,
+            pixel_y,
+            pixel_x + SQUARE_SIZE[0],
+            pixel_y + SQUARE_SIZE[1],
+            fill=BG_COLOR,
+            outline=BG_COLOR
+        )
+    
+    # rgb = pygame.image.tobytes(surface, "RGB")# this creates 
+    # image = Image.frombytes("RGB", surface.get_size(), rgb)
+    # tk_image = ImageTk.PhotoImage(image)
+    # image_callback(tk_image)
+
+
+#has eaten an apple and gets score
+def hasEaten(snake_copy):
+    global snake, apple, tail, score, stepCount
+    if snake_copy == None:
+        if snake[0] == apple:
+            snake.append(tail)
+            if len(snake) == GRID_SIZE[0]*GRID_SIZE[1]:
+                print("you won")
+            else:
+                makeApple()
+                score = score+10 
+                stepCount = 0
+        else:
+            stepCount = stepCount+1
+            renderSnake(tail[0],tail[1], True)
+        return stepCount, score
+    else:
+        if snake_copy[0] == apple:
+            return True
+        else:
+            return False
+            
+
+
+def start():
+    global tail, snake, apple, score, direction, plot, stepCount
+
+
+    canvas.delete("all")
+    window.update()
+    snake.append((GRID_SIZE[0]/2, GRID_SIZE[1]/2))
+    while(len(snake) != 0):
+        snake.pop()
+    snake.append((GRID_SIZE[0]/2, GRID_SIZE[1]/2))
+    tail = snake[-1]
+    score = 0
+    direction = (0,1)
+    makeApple()
+    agent.addStats(snake, apple, stepCount, score, direction)
+    # plot = agent.gameOver() #returns the plot object so that the gui doesn't have a null object for the plot. might break stuff?
+
+
+def run(first):
+    global state, x, y, snake, apple, score, gameOver, direction, stepCount, plot
+    if(first):
+        start()
+        first = False
+    
+    getDirection("up")
+    agent.addStats(snake, apple, stepCount, score, direction)
+
+
+    if(state == False):
+        moveSnake(None, None) #render part done here
+        stepCount, score = hasEaten(None) #eats apple gets score
+        gameOver = collisionCheck(None)
+        window.update_idletasks()
+        state = True
+    if state == True:
+        state = False
+    label.config(text=f"Score: {score} game total:{gameTotal}")
+
+    #game over loop wait for reset of game
+    while gameOver == True:
+        if(gameTotal <EPOCHS):
+            plot = agent.gameOver() #makes data frame of the player stats of the round
+            start()
+            gameOver = False
+        window.update()
+    
+        if(gameOver == False):
+            break
+    window.after(SPEED, lambda: run(False))
+
+
+def reset():
+    GRID_SIZE = (50,50)
+    RESOLUTION = (600,600)
+    SQUARE_SIZE = (RESOLUTION[0]/(GRID_SIZE[0]),RESOLUTION[1]/(GRID_SIZE[1])) #body seg size
+    SPEED = 100 
+window.mainloop()
+
+stepCount = 0
