@@ -5,9 +5,8 @@ I am creating a snake bot that uses a GUI control system with drop-down menus to
 
 ## Start Demo 
 #(algorithm selection button doesn't do anything now) 
-Should run 100 rounds of snake (PLEASE STOP IT EARLY). Pressing restart game should reset the snake game so that the speed can be changed. 
-The screen size does change, but I did not remember to change a few parameters which causes some bugs. But, if you change the screen size before launching the agent, it should work. It is buggy with mid run changes. 
-
+Should run 100 rounds of snake (YOU DON'T WATCH THE ENTIRE THING)
+Start training also resets the game board if you want to change board sizes. The hide gameplay button is also functional. 
 ![Start demo](start_training.png)
 ---
 
@@ -26,12 +25,11 @@ This file stores the GUI of my snake game. Pressing start training starts traini
 
 
 ### 4. `problems.py`  
-
 Algorithm.py contains the agent object that controls the game. I wanted to set it up so that the agent had access to a bunch of game stats from the main file, and then, I could use inheritance to change the agent function. Ideally, I have the GUI spawn an agent and then pass the agent to the other file. There is a bug where when the apple is above the snake, the snake goes away from the apple before turning around and moving back towards the apple after it is made rational by running into a wall. 
 
-###Delete below this for later but good reference. 
-This file will contain the implementation of the problems you are solving with your AI algorithms.  
-- Ensure that the problems are clearly defined and modular, so the algorithms can be easily tested on each.  
-- For the **progress report**, this file should be fully implemented and require no major edits afterward.
 
----
+
+
+
+###Reflection 
+If I don't have enough commits, I don't think AI would opt to try doing multithreaded programing to get embedding a game into a gui. 
