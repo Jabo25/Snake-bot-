@@ -36,7 +36,7 @@ label.pack()
 canvas = tk.Canvas(window, bg=BG_COLOR, height=RESOLUTION[1], width=RESOLUTION[0])
 canvas.pack()
 window.update()
-
+reset = False # tells game to reset in the game loop. 
 #game controller (stores current vars agent stores curr + past vars)
 snake = [(GRID_SIZE[0]/2, GRID_SIZE[1]/2)]
 tail = snake[-1]
@@ -199,7 +199,7 @@ def hasEaten(snake_copy):
 
 
 def start():
-    global tail, snake, apple, score, direction, plot, stepCount
+    global tail, snake, apple, score, direction, plot, stepCount, reset
 
 
     canvas.delete("all")
@@ -218,6 +218,7 @@ def start():
     score = 0
     direction = (0, 1)
     stepCount = 0
+    reset = False # when start game is presssed finishes reset. 
 
 
     
@@ -225,27 +226,40 @@ def start():
 
 
 def run(first):
-    global state, x, y, snake, apple, score, gameOver, direction, stepCount, plot
+    global state, x, y, snake, apple, score, gameOver, direction, stepCount, plot, reset
+    # global 
     if(first):
         start()
         first = False
     
     getDirection("up")
     agent.addStats(snake, apple, stepCount, score, direction)
+    resetSkip = False
+    #spinning lock (inefficient, but doesn't matter)
+    i = 0
+    while reset:
+        print("waiting for start command")
+        resetSkip = True
+        i += 1
+        # this is there for multi threading.
+        #otherwise the loop hogs the gui update thread (SO COOL)
+        if i == 1000:
+            break
+    
 
 
-    if(state == False):
+    if(state == False and resetSkip == False):
         moveSnake(None, None) #render part done here
         stepCount, score = hasEaten(None) #eats apple gets score
         gameOver = collisionCheck(None)
         window.update_idletasks()
         state = True
-    if state == True:
+    if state == True and resetSkip == False:
         state = False
     label.config(text=f"Score: {score} game total:{gameTotal}")
 
     #game over loop wait for reset of game
-    while gameOver == True:
+    while gameOver == True and resetSkip == False:
         if(gameTotal <EPOCHS):
             plot = agent.gameOver() #makes data frame of the player stats of the round
             start()
@@ -254,14 +268,37 @@ def run(first):
     
         if(gameOver == False):
             break
+    
+    if  resetSkip and not reset:
+        start()
+        resetSkip = False
+    
     window.after(SPEED, lambda: run(False))
 
 
+#resets training and everything back to its original state. 
 def reset():
-    GRID_SIZE = (50,50)
-    RESOLUTION = (600,600)
-    SQUARE_SIZE = (RESOLUTION[0]/(GRID_SIZE[0]),RESOLUTION[1]/(GRID_SIZE[1])) #body seg size
-    SPEED = 100 
+    # global GRID_SIZE, RESOLUTION, SQUARE_SIZE, SPEED, reset, score, direction, gamesPlayed, gameTotal, show, window, label, canvas, snake, tail, apple
+    # GRID_SIZE = (50,50)
+    # RESOLUTION = (600,600)
+    # SQUARE_SIZE = (RESOLUTION[0]/(GRID_SIZE[0]),RESOLUTION[1]/(GRID_SIZE[1])) #body seg size
+    # SPEED = 100 
+    # gameTotal = 0
+    # score = 0
+    # # while(len(snake) != 0):
+    # #     snake.pop()
+    # # snake = [(GRID_SIZE[0]/2, GRID_SIZE[1]/2)]
+    # # canvas.pack()
+    # # window.update()
+
+    # #game controller (stores current vars agent stores curr + past vars)
+    # # tail = snake[-1]
+    # # apple = ()
+    # # direction = (0,1)
+    # score = 0
+    # gamesPlayed = 0
+    reset = True
+    # agent.resetPlayer() #this was a big redundancy headache i neeed to fix
 window.mainloop()
 
 stepCount = 0
