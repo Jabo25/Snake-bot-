@@ -1,220 +1,304 @@
 import threading
-import multiprocessing
-
+import random
+import pandas as pd
 import tkinter as tk
-from tkinter import ttk
-root = tk.Tk()
-root.title("Complete Your Profile")
-root.resizable(False, False)
-
-
-
-from tkinter import * 
-from matplotlib.figure import Figure
-from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg, NavigationToolbar2Tk)
-
-import threading
+# import keyboard
 import time
-startedGameLoop = False #tells to start game loop vs reset game
-
-# Keep all form fields on the left
-root.columnconfigure(0, weight=0)
-root.columnconfigure(1, weight=0)
-
-game_frame = ttk.Frame(root)
-game_frame.grid(row=0, column=3, rowspan=7, padx=20, pady=10)
-
-# snake_copy creates its own Tk window and enters mainloop during import.
-# Route those calls into this GUI so its game canvas is embedded here.
-tk_root_factory = tk.Tk
-tk_label_factory = tk.Label
-tk_canvas_factory = tk.Canvas
-root_mainloop = root.mainloop
-
-def embedded_root(*args, **kwargs):
-    return root
-
-def embedded_label(master=None, *args, **kwargs):
-    if master is root:
-        master = game_frame
-    return tk_label_factory(master, *args, **kwargs)
-
-def embedded_canvas(master=None, *args, **kwargs):
-    if master is root:
-        master = game_frame
-    return tk_canvas_factory(master, *args, **kwargs)
-
-tk.Tk = embedded_root
-tk.Label = embedded_label
-tk.Canvas = embedded_canvas
-root.mainloop = lambda *args, **kwargs: None
-try:
-    import Algorithms as sn
-finally:
-    tk.Tk = tk_root_factory
-    tk.Label = tk_label_factory
-    tk.Canvas = tk_canvas_factory
-    root.mainloop = root_mainloop
-
-root.title("Complete Your Profile")
-setScreenSize = False
+import problems as st
 
 
+# pip3 install plot
+#pip3 install pandas
+# pip3 install keyboard
+# set environment constants
 
-def setScreenSize():
-    global startedGameLoop
-    if(grid_size.get() == "Small"):
-        sn.GRID_SIZE = (4,4)
-    if(grid_size.get() == "Medium"):
-        sn.GRID_SIZE = (10,10)
-    if(grid_size.get() == "Large"):
-        sn.GRID_SIZE = (20,20)
-    if(grid_size.get() == "Extra Large"):
-        sn.GRID_SIZE = (50,50)
 
-    if epochs.get() != "":
-        sn.EPOCHS = epochs.get()
-    if Gamma.get() != "":
-        sn.GAMMA = epochs.get()    
-    if Epsilon.get() != "":
-        sn.EPSILON = epochs.get()        
-    sn.SQUARE_SIZE = (sn.RESOLUTION[0]/(sn.GRID_SIZE[0]),sn.RESOLUTION[1]/(sn.GRID_SIZE[1])) #body seg size
-    sn.snake = [(sn.GRID_SIZE[0]/2, sn.GRID_SIZE[1]/2)]
-    sn.SPEED = Speed.get()
-    # gameOver = False
-    print(startedGameLoop, "not started")
-    if(not startedGameLoop):
-        sn.run(True)
-        startedGameLoop = True
+# set environment constants
+GRID_SIZE = (50,50)
+RESOLUTION = (600,600)
+SQUARE_SIZE = (RESOLUTION[0]/(GRID_SIZE[0]),RESOLUTION[1]/(GRID_SIZE[1])) #body seg size
+SPEED = 100
+EPOCHS = 100
+EPSILON = 1
+GAMMA = 0
+plot = None
+#make screen appear
+SNAKE_COLOR = "#00FF00"
+FOOD_COLOR = "#FF0000"
+BG_COLOR = "#000000"
+gameTotal = 0
+show = True
+window = tk.Tk()
+window.title("Snake Game")
+window.resizable(False, False)
+label = tk.Label(window, text=f"Score: {0} game total:{0} ", font=("Consolas", 20))
+label.pack()
+canvas = tk.Canvas(window, bg=BG_COLOR, height=RESOLUTION[1], width=RESOLUTION[0])
+canvas.pack()
+window.update()
+reset = False # tells game to reset in the game loop. 
+#game controller (stores current vars agent stores curr + past vars)
+snake = [(GRID_SIZE[0]/2, GRID_SIZE[1]/2)]
+tail = snake[-1]
+apple = ()
+score = 0
+direction = (0,1)
+score = 0
+gamesPlayed = 0
+
+#reset environment/restart game vars(locks)
+state = False
+gameOver = False
+
+
+#extra statistics for the snake
+agent = st.player()#make player object
+canvas_rects = {}
+
+#takes keyboard inputa and moves the snake
+def getDirection(event):
+    global direction, agent
+    if(direction == "up"):
+        if event.keysym == "Left" and direction != (1, 0):
+            direction = (-1, 0)
+        elif event.keysym == "Right" and direction != (-1, 0):
+            direction = (1, 0)
+        elif event.keysym == "Up" and direction != (0, 1):
+            direction = (0, -1)
+        elif event.keysym == "Down" and direction != (0, -1):
+            direction = (0, 1)
+        
+    direction = agent.getDirection()
+    return direction
+
+#modes the snake in most recent direction
+def moveSnake(snake_clone, dir_clone):
+    global snake, direction, tail
+
+
+    head = snake[0]
+    tail = snake[-1]
+    snake.pop()
+    snake.insert(0, (head[0]+direction[0], head[1]+direction[1]))
+    if(show):
+        renderSnake(snake[0][0],snake[0][1], False)
+
+        
+    return snake
+
+    
+
+#this function checks for collisions which would end the game  
+def collisionCheck(snake_clone):
+    global gameTotal
+    global snake
+    if(snake_clone == None):
+        snake_clone = snake
+    collision = False
+    for index, x in enumerate(snake_clone):
+        if index != 0:
+            if snake_clone[0] == x:
+                collision = True
+    if snake_clone[0][0] < 0 or snake_clone[0][0] >= GRID_SIZE[0] or snake_clone[0][1] < 0 or snake_clone[0][1] >= GRID_SIZE[1]:
+        collision = True
+    if collision == True:
+        gameTotal = gameTotal+1
+        print("game over")
+    return collision
+            
+#generates a new apple            
+def makeApple():
+    global apple
+    apple = (random.randint(0, GRID_SIZE[0]-1), random.randint(0, GRID_SIZE[1]-1))     
+    for x in snake:
+        if apple == x:
+            makeApple()
+            return
+
+    agent.SnakeAfterFood.append(snake)
+    agent.AppleList.append(apple)
+
+    pixel_x = SQUARE_SIZE[0] * apple[0]
+    pixel_y = SQUARE_SIZE[1] * apple[1]
+
+    if(show):
+        canvas.create_rectangle(
+            pixel_x,
+            pixel_y,
+            pixel_x + SQUARE_SIZE[0],
+            pixel_y + SQUARE_SIZE[1],
+            fill=FOOD_COLOR
+        )
+
+
+def renderSnake(x,y, remove):
+    
+    global  color, canvas_rects
+    pixel_x = SQUARE_SIZE[0] * x
+    pixel_y = SQUARE_SIZE[1] * y
+
+    if not remove:
+        rect_id = canvas.create_rectangle(
+            pixel_x,
+            pixel_y,
+            pixel_x + SQUARE_SIZE[0],
+            pixel_y + SQUARE_SIZE[1],
+            fill=SNAKE_COLOR
+        )
+        canvas_rects[(x, y)] = rect_id
+        # canvas.create_rectangle(
+        #     pixel_x,
+        #     pixel_y,
+        #     pixel_x + SQUARE_SIZE[0],
+        #     pixel_y + SQUARE_SIZE[1],
+        #     fill=SNAKE_COLOR
+        # )
     else:
-        sn.start()
-        sn.gameOver = False
+        # pygame.draw.rect(surface, (0,0,0), rect)
+        rect_id = canvas_rects.pop((x, y), None)
+        canvas.create_rectangle(
+            pixel_x,
+            pixel_y,
+            pixel_x + SQUARE_SIZE[0],
+            pixel_y + SQUARE_SIZE[1],
+            fill=BG_COLOR,
+            outline=BG_COLOR
+        )
+        if rect_id is not None:
+            canvas.delete(rect_id)
     
+    # rgb = pygame.image.tobytes(surface, "RGB")# this creates 
+    # image = Image.frombytes("RGB", surface.get_size(), rgb)
+    # tk_image = ImageTk.PhotoImage(image)
+    # image_callback(tk_image)
 
 
-                                                                            #DROP DOWN MENU's
-
-# Grid size dropdown.                   ROW 0                         CONTROLLER NAME = 
-tk.Label( root, text="Grid size:",).grid(row=0, column=0, padx=5, pady=3, sticky=tk.W)
-grid_size = ttk.Combobox( root, values=["Small", "Medium", "Large", "Extra Large"], state="readonly",)
-grid_size.grid(row=0, column=1, padx=5, pady=5, sticky=tk.W)
-
-
-# Training Algorithm dropdown.          ROW 1
-tk.Label(root, text="Algorithm:",).grid(row=1, column=0, padx=3, pady=5, sticky=tk.W)
-eye_color = ttk.Combobox(root, values=["Fruit Fly", "Epsilon greedy", "Q-learining", "Modified Q learning", "NN"],state="readonly",)
-eye_color.grid(row=1, column=1, padx=5, pady=5, sticky=tk.W)
-
-
-# Training Algorithm dropdown.          ROW 2
-tk.Label(root, text="Norm:",).grid(row=2, column=0, padx=1, pady=1, sticky=tk.W)
-norm = ttk.Combobox(root, values=["L1", "L2", "Infinity"], state="readonly")
-norm.grid(row=2, column=1, padx=1, pady=1, sticky=tk.W)
-
-
-
-
-                                                                        # PARAM ENTRY BOXES
-# Height entry.                        ROW 3
-tk.Label(root, text="Epsilon:", ).grid(row=3, column=0, padx=5, pady=3, sticky=tk.W)
-Epsilon = ttk.Entry(root)
-Epsilon.grid(row=3, column=1, padx=5, pady=5, sticky=tk.W)
-
-# Epochs entry.                        ROW 4
-tk.Label(root,text="epochs:",).grid(row=4, column=0, padx=5, pady=3, sticky=tk.W)
-epochs = ttk.Entry(root)
-epochs.grid(row=4, column=1, padx=5, pady=3, sticky=tk.W)
-
-
-# gama entry                           ROW 5
-tk.Label(root, text="Gamma:", ).grid(row=5, column=0, padx=5, pady=3, sticky=tk.W)
-Gamma = ttk.Entry(root)
-Gamma.grid(row=5, column=1, padx=5, pady=3, sticky=tk.W)
-
-
-# game total                           ROW 6
-tk.Label(root, text="Game Total:", ).grid(row=6, column=0, padx=5, pady=3, sticky=tk.W)
-gameTotal = ttk.Entry(root)
-gameTotal.grid(row=6, column=1, padx=5, pady=5, sticky=tk.W)
-
-
-
-                                                                        # Slide controls
-# set Render Speed                      ROW 7
-Speed = tk.Scale(root, from_=0, to=42, orient = tk.HORIZONTAL)
-Speed.grid(row=7, column=1, padx=5, pady=5, sticky=tk.W)
-tk.Label(root, text="Render Speed:", ).grid(row=7, column=0, padx=5, pady=5, sticky=tk.W)
-
-
-
-
-
-
-
-
-                                                                #BOTTOM ROW BUTTONS HERE (ROW 8)
-# reset buton                        ROW 7.               #command = reset (is in the snake file)
-reset = ttk.Button(root, text="Reset", command = sn.reset)
-reset.grid(row=8, column=0, padx=5, pady=10, sticky=tk.W)
-command=setScreenSize
-
-#stop training
-stop = ttk.Button(root, text="Stop Training",)
-stop.grid(row=8, column=1, padx=5, pady=10, sticky=tk.W)
-
-#start training button
-start = ttk.Button(root, command=setScreenSize, text="Start Training",)
-start.grid(row=8, column=2, columnspan=2, padx=5, pady=5, sticky=tk.W)
-
-
-#start training button
-def button():
-    setattr(sn, "show", not sn.show)
-    if(not sn.show):
-        showGame.config(text="Show Gameplay")
+#has eaten an apple and gets score
+def hasEaten(snake_copy):
+    global snake, apple, tail, score, stepCount
+    if snake_copy == None:
+        if snake[0] == apple:
+            snake.append(tail)
+            renderSnake(tail[0], tail[1], False)
+            if len(snake) == GRID_SIZE[0]*GRID_SIZE[1]:
+                print("you won")
+            else:
+                makeApple()
+                score = score+10 
+                stepCount = 0
+        else:
+            stepCount = stepCount+1
+            renderSnake(tail[0],tail[1], True)
+        return stepCount, score
     else:
-        showGame.config(text="Hide Game Play")
+        if snake_copy[0] == apple:
+            return True
+        else:
+            return False
+            
+
+
+def start():
+    global tail, snake, apple, score, direction, plot, stepCount, reset
+
+
+    canvas.delete("all")
+    window.update()
+    snake.append((GRID_SIZE[0]/2, GRID_SIZE[1]/2))
+    while(len(snake) != 0):
+        snake.pop()
+    snake.append((GRID_SIZE[0]/2, GRID_SIZE[1]/2))
+    tail = snake[-1]
+    score = 0
+    direction = (0,1)
+    makeApple()
+    agent.addStats(snake, apple, stepCount, score, direction)
+    snake = [(GRID_SIZE[0] / 2, GRID_SIZE[1] / 2)]
+    tail = snake[-1]
+    score = 0
+    direction = (0, 1)
+    stepCount = 0
+    reset = False # when start game is presssed finishes reset. 
+
+
     
-showGame = ttk.Button(root, text="Hide Game Play", command = button)
-showGame.grid(row=7, column=4, columnspan=2, padx=5, pady=5, sticky=tk.W)
+    # plot = agent.gameOver() #returns the plot object so that the gui doesn't have a null object for the plot. might break stuff?
 
 
-
-# plot function is created for 
-# plotting the graph in 
-# tkinter window
-def plot():
-
+def run(first):
+    global state, x, y, snake, apple, score, gameOver, direction, stepCount, plot, reset
+    # global 
+    if(first):
+        start()
+        first = False
     
-    plot_frame = ttk.Frame(root)  #attach plot frame to main window
+    getDirection("up")
+    agent.addStats(snake, apple, stepCount, score, direction)
+    resetSkip = False
+    #spinning lock (inefficient, but doesn't matter)
+    i = 0
+    while reset:
+        print("waiting for start command")
+        resetSkip = True
+        i += 1
+        # this is there for multi threading.
+        #otherwise the loop hogs the gui update thread (SO COOL)
+        if i == 1000:
+            break
     
-    fig = sn.agent.fig
-    canvas = FigureCanvasTkAgg(fig, master = plot_frame)  ##attach the plot to a canvas
-    canvas.draw()
-    # # canvas.draw_idle()
-
-    # # # placing the canvas on the Tkinter window
-    canvas.get_tk_widget().pack()
-
-    # # # creating the Matplotlib toolbar
-    # toolbar = NavigationToolbar2Tk(canvas,
-    #                                plot_frame)
-    # toolbar.update()
-    plot_frame.grid(row=0, column=4, rowspan=7, padx=20, pady=10)
 
 
-    return plot_frame
+    if(state == False and resetSkip == False):
+        moveSnake(None, None) #render part done here
+        stepCount, score = hasEaten(None) #eats apple gets score
+        gameOver = collisionCheck(None)
+        window.update_idletasks()
+        state = True
+    if state == True and resetSkip == False:
+        state = False
+    label.config(text=f"Score: {score} game total:{gameTotal}")
+
+    #game over loop wait for reset of game
+    while gameOver == True and resetSkip == False:
+        if(gameTotal <EPOCHS):
+            plot = agent.gameOver() #makes data frame of the player stats of the round
+            start()
+            gameOver = False
+        window.update()
+    
+        if(gameOver == False):
+            break
+    
+    if  resetSkip and not reset:
+        start()
+        resetSkip = False
+    
+    window.after(SPEED, lambda: run(False))
 
 
+#resets training and everything back to its original state. 
+def reset():
+    global GRID_SIZE, RESOLUTION, SQUARE_SIZE, SPEED, reset, score, direction, gamesPlayed, gameTotal, show, window, label, canvas, snake, tail, apple
+    GRID_SIZE = (50,50)
+    RESOLUTION = (600,600)
+    SQUARE_SIZE = (RESOLUTION[0]/(GRID_SIZE[0]),RESOLUTION[1]/(GRID_SIZE[1])) #body seg size
+    SPEED = 100 
+    gameTotal = 0
+    score = 0
+    # while(len(snake) != 0):
+    #     snake.pop()
+    # snake = [(GRID_SIZE[0]/2, GRID_SIZE[1]/2)]
+    # canvas.pack()
+    # window.update()
 
-plot()
-if(sn.gameOver):
-    # plot_canvas.draw_idle()
-    plot()
+    #game controller (stores current vars agent stores curr + past vars)
+    # tail = snake[-1]
+    # apple = ()
+    # direction = (0,1)
+    score = 0
+    gamesPlayed = 0
+    reset = True
+    agent.resetPlayer() #this was a big redundancy headache i neeed to fix
+window.mainloop()
 
-
-
-t2 = threading.Thread(target=root.mainloop())
-t2.start()
-
-
+stepCount = 0
