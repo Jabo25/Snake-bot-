@@ -2,9 +2,11 @@
 I am creating a snake bot that uses a GUI control system with drop-down menus to switch up the graphing method of the project. I want to experiment with Q-learning, sarsa, deep q learning, and try to wire the fruit fly connectome  to play snake. 
 
 
+
 ## Start Demo 
 #(algorithm selection button doesn't do anything now) 
-Should run 100 rounds of snake. Pressing restart game should reset the snake game so that the speed can be changed. 
+Should run 100 rounds of snake (PLEASE STOP IT EARLY). Pressing restart game should reset the snake game so that the speed can be changed. 
+The screen size does change, but I did not remember to change a few parameters which causes some bugs. But, if you change the screen size before launching the agent, it should work. It is buggy with mid run changes. 
 
 ![Start demo](start_training.png)
 ---
