@@ -153,9 +153,10 @@ tk.Label(root, text="Render Speed:", ).grid(row=7, column=0, padx=5, pady=5, sti
 
 
                                                                 #BOTTOM ROW BUTTONS HERE (ROW 8)
-# reset buton                        ROW 7
-reset = ttk.Button(root, text="Reset",)
+# reset buton                        ROW 7.               #command = reset (is in the snake file)
+reset = ttk.Button(root, text="Reset", command = sn.reset)
 reset.grid(row=8, column=0, padx=5, pady=10, sticky=tk.W)
+command=setScreenSize
 
 #stop training
 stop = ttk.Button(root, text="Stop Training",)
@@ -175,8 +176,6 @@ def button():
         showGame.config(text="Hide Game Play")
     
 showGame = ttk.Button(root, text="Hide Game Play", command = button)
-
-
 showGame.grid(row=7, column=4, columnspan=2, padx=5, pady=5, sticky=tk.W)
 
 
