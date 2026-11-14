@@ -49,7 +49,7 @@ tk.Label = embedded_label
 tk.Canvas = embedded_canvas
 root.mainloop = lambda *args, **kwargs: None
 try:
-    import snake_copy as sn
+    import Algorithms as sn
 finally:
     tk.Tk = tk_root_factory
     tk.Label = tk_label_factory
