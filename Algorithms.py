@@ -4,7 +4,7 @@ import pandas as pd
 import tkinter as tk
 # import keyboard
 import time
-import algorithms as st
+import problems as st
 
 
 # pip3 install plot
