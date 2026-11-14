@@ -58,9 +58,7 @@ finally:
 
 root.title("Complete Your Profile")
 setScreenSize = False
-Speed = tk.Scale(root, from_=0, to=42, orient = tk.HORIZONTAL)
-Speed.grid(row=6, column=1, padx=5, pady=5, sticky=tk.W)
-tk.Label(root, text="Speed:", ).grid(row=6, column=0, padx=5, pady=5, sticky=tk.W)
+
 
 
 def setScreenSize():
@@ -94,58 +92,78 @@ def setScreenSize():
     
 
 
+                                                                            #DROP DOWN MENU's
 
-
-# Grid size dropdown
-tk.Label( root, text="Grid size:",).grid(row=0, column=0, padx=5, pady=5, sticky=tk.W)
-
-grid_size = ttk.Combobox( root,
-    values=["Small", "Medium", "Large", "Extra Large"],
-    state="readonly",
-)
+# Grid size dropdown.                   ROW 0                         CONTROLLER NAME = 
+tk.Label( root, text="Grid size:",).grid(row=0, column=0, padx=5, pady=3, sticky=tk.W)
+grid_size = ttk.Combobox( root, values=["Small", "Medium", "Large", "Extra Large"], state="readonly",)
 grid_size.grid(row=0, column=1, padx=5, pady=5, sticky=tk.W)
 
 
-
-
-# Training Algorithm dropdown
-tk.Label(root, text="Algorithm:",).grid(row=1, column=0, padx=5, pady=5, sticky=tk.W)
+# Training Algorithm dropdown.          ROW 1
+tk.Label(root, text="Algorithm:",).grid(row=1, column=0, padx=3, pady=5, sticky=tk.W)
 eye_color = ttk.Combobox(root, values=["Fruit Fly", "Epsilon greedy", "Q-learining", "Modified Q learning", "NN"],state="readonly",)
 eye_color.grid(row=1, column=1, padx=5, pady=5, sticky=tk.W)
 
-# Height entry
-tk.Label(root, text="Epsilon:", ).grid(row=2, column=0, padx=5, pady=5, sticky=tk.W)
+
+# Training Algorithm dropdown.          ROW 2
+tk.Label(root, text="Norm:",).grid(row=2, column=0, padx=1, pady=1, sticky=tk.W)
+norm = ttk.Combobox(root, values=["L1", "L2", "Infinity"], state="readonly")
+norm.grid(row=2, column=1, padx=1, pady=1, sticky=tk.W)
+
+
+
+
+                                                                        # PARAM ENTRY BOXES
+# Height entry.                        ROW 3
+tk.Label(root, text="Epsilon:", ).grid(row=3, column=0, padx=5, pady=3, sticky=tk.W)
 Epsilon = ttk.Entry(root)
-Epsilon.grid(row=2, column=1, padx=5, pady=5, sticky=tk.W)
+Epsilon.grid(row=3, column=1, padx=5, pady=5, sticky=tk.W)
 
-# Epochs entry
-tk.Label(root,text="epochs:",).grid(row=3, column=0, padx=5, pady=5, sticky=tk.W)
+# Epochs entry.                        ROW 4
+tk.Label(root,text="epochs:",).grid(row=4, column=0, padx=5, pady=3, sticky=tk.W)
 epochs = ttk.Entry(root)
-epochs.grid(row=3, column=1, padx=5, pady=5, sticky=tk.W)
+epochs.grid(row=4, column=1, padx=5, pady=3, sticky=tk.W)
 
 
-# gama entry
-tk.Label(root, text="Gamma:", ).grid(row=4, column=0, padx=5, pady=5, sticky=tk.W)
+# gama entry                           ROW 5
+tk.Label(root, text="Gamma:", ).grid(row=5, column=0, padx=5, pady=3, sticky=tk.W)
 Gamma = ttk.Entry(root)
-Gamma.grid(row=4, column=1, padx=5, pady=5, sticky=tk.W)
+Gamma.grid(row=5, column=1, padx=5, pady=3, sticky=tk.W)
 
-# game total
-tk.Label(root, text="Game Total:", ).grid(row=5, column=0, padx=5, pady=5, sticky=tk.W)
+
+# game total                           ROW 6
+tk.Label(root, text="Game Total:", ).grid(row=6, column=0, padx=5, pady=3, sticky=tk.W)
 gameTotal = ttk.Entry(root)
-gameTotal.grid(row=5, column=1, padx=5, pady=5, sticky=tk.W)
+gameTotal.grid(row=6, column=1, padx=5, pady=5, sticky=tk.W)
 
 
-# reset buton
+
+                                                                        # Slide controls
+# set Render Speed                      ROW 7
+Speed = tk.Scale(root, from_=0, to=42, orient = tk.HORIZONTAL)
+Speed.grid(row=7, column=1, padx=5, pady=5, sticky=tk.W)
+tk.Label(root, text="Render Speed:", ).grid(row=7, column=0, padx=5, pady=5, sticky=tk.W)
+
+
+
+
+
+
+
+
+                                                                #BOTTOM ROW BUTTONS HERE (ROW 8)
+# reset buton                        ROW 7
 reset = ttk.Button(root, text="Reset",)
-reset.grid(row=7, column=0, padx=5, pady=10, sticky=tk.W)
+reset.grid(row=8, column=0, padx=5, pady=10, sticky=tk.W)
 
 #stop training
 stop = ttk.Button(root, text="Stop Training",)
-stop.grid(row=7, column=1, padx=5, pady=10, sticky=tk.W)
+stop.grid(row=8, column=1, padx=5, pady=10, sticky=tk.W)
 
 #start training button
 start = ttk.Button(root, command=setScreenSize, text="Start Training",)
-start.grid(row=7, column=2, columnspan=2, padx=5, pady=5, sticky=tk.W)
+start.grid(row=8, column=2, columnspan=2, padx=5, pady=5, sticky=tk.W)
 
 
 #start training button
