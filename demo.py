@@ -1,223 +1,244 @@
-
-#this will be renamed to assist with the player agent. 
-#through inheretence, the player object type will be modified to deal with new algorithms. 
-#the inhereted class will be an algorithm object which is going to be a player atruibute
 import threading
 import multiprocessing
-import pandas as pd
-import matplotlib.pyplot as plt
+
 import tkinter as tk
 from tkinter import ttk
+root = tk.Tk()
+root.title("Complete Your Profile")
+root.resizable(False, False)
+
+
+
 from tkinter import * 
 from matplotlib.figure import Figure
-from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg, 
-                                               NavigationToolbar2Tk)
-root = tk.Tk()
-#maybe make an object called a game to store the local game stats. 
+from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg, NavigationToolbar2Tk)
 
-# set environment constants
-GRID_SIZE = (50,50)
-RESOLUTION = (600,600)
-SQUARE_SIZE = (RESOLUTION[0]/(GRID_SIZE[0]),RESOLUTION[1]/(GRID_SIZE[1])) #body seg size
-SPEED = 100
-EPOCHS = 100
-EPSILON = 1
-GAMMA = 0
+import threading
+import time
+startedGameLoop = False #tells to start game loop vs reset game
+
+# Keep all form fields on the left
+root.columnconfigure(0, weight=0)
+root.columnconfigure(1, weight=0)
+
+game_frame = ttk.Frame(root)
+game_frame.grid(row=0, column=3, rowspan=7, padx=20, pady=10)
+
+# snake_copy creates its own Tk window and enters mainloop during import.
+# Route those calls into this GUI so its game canvas is embedded here.
+tk_root_factory = tk.Tk
+tk_label_factory = tk.Label
+tk_canvas_factory = tk.Canvas
+root_mainloop = root.mainloop
+
+def embedded_root(*args, **kwargs):
+    return root
+
+def embedded_label(master=None, *args, **kwargs):
+    if master is root:
+        master = game_frame
+    return tk_label_factory(master, *args, **kwargs)
+
+def embedded_canvas(master=None, *args, **kwargs):
+    if master is root:
+        master = game_frame
+    return tk_canvas_factory(master, *args, **kwargs)
+
+tk.Tk = embedded_root
+tk.Label = embedded_label
+tk.Canvas = embedded_canvas
+root.mainloop = lambda *args, **kwargs: None
+try:
+    import Algorithms as sn
+finally:
+    tk.Tk = tk_root_factory
+    tk.Label = tk_label_factory
+    tk.Canvas = tk_canvas_factory
+    root.mainloop = root_mainloop
+
+root.title("Complete Your Profile")
+setScreenSize = False
 
 
-#modes the snake in most recent direction
-def moveSnake(snake_clone1, dir_clone1):
-        snake_clone = snake_clone1.copy()
-        dir_clone = dir_clone1
 
-        head = snake_clone[0]
-        tail = snake_clone[-1]
-        tail = snake_clone[-1]
-        snake_clone.pop()
-        snake_clone.insert(0, (head[0]+dir_clone[0], head[1]+dir_clone[1]))
-        return snake_clone
+def setScreenSize():
+    global startedGameLoop
+    if(grid_size.get() == "Small"):
+        sn.GRID_SIZE = (4,4)
+    if(grid_size.get() == "Medium"):
+        sn.GRID_SIZE = (10,10)
+    if(grid_size.get() == "Large"):
+        sn.GRID_SIZE = (20,20)
+    if(grid_size.get() == "Extra Large"):
+        sn.GRID_SIZE = (50,50)
+    sn.agent.norm = norm.get()
 
-    
-
-#this function checks for collisions which would end the game  
-def collisionCheck(snake_clone1):
-    snake_clone = snake_clone1.copy()
-    global snake
-    if(snake_clone == None):
-        snake_clone = snake
-    collision = False
-    for index, x in enumerate(snake_clone):
-        if index != 0:
-            if snake_clone[0] == x:
-                collision = True
-    if snake_clone[0][0] < 0 or snake_clone[0][0] >= GRID_SIZE[0] or snake_clone[0][1] < 0 or snake_clone[0][1] >= GRID_SIZE[1]:
-        collision = True
-
-    return collision
-      
-#has eaten an apple and gets score
-def hasEaten(snake_copy1):
-    snake_copy = snake_copy1.copy()
-    global snake, apple, tail, score, stepCount
-    if snake_copy == None:
-        if snake[0] == apple:
-            snake.append(tail)
-            if len(snake) == GRID_SIZE[0]*GRID_SIZE[1]:
-                print("you won")
-            else:
-                makeApple()
-                score = score+10 
-                stepCount = 0
-        else:
-            stepCount = stepCount+1
-            renderSnake(tail[0],tail[1], True)
-        return stepCount, score
+    if epochs.get() != "":
+        sn.EPOCHS = int(epochs.get())
+    if Gamma.get() != "":
+        sn.GAMMA = epochs.get()    
+    if Epsilon.get() != "":
+        sn.EPSILON = epochs.get()        
+    sn.SQUARE_SIZE = (sn.RESOLUTION[0]/(sn.GRID_SIZE[0]),sn.RESOLUTION[1]/(sn.GRID_SIZE[1])) #body seg size
+    sn.snake = [(sn.GRID_SIZE[0]/2, sn.GRID_SIZE[1]/2)]
+    sn.SPEED = Speed.get()
+    # gameOver = False
+    print(startedGameLoop, "not started")
+    if(not startedGameLoop):
+        sn.run(True)
+        startedGameLoop = True
     else:
-        if snake_copy[0] == apple:
-            return True
-        else:
-            return False
-            
+        sn.start()
+        sn.gameOver = False
+    
 
-class player: 
-    def __init__(self, agentType=None, averageScore=0, name=None):
-        self.agentType = agentType
-        self.averageScore = averageScore
-        self.finalScoreList = []
-        self.totalGames = 0
-        self.GameHistory = []
-        self.Name = name
 
-        self.df = pd.DataFrame()
+                                                                            #DROP DOWN MENU's
 
-        self.snakeHistory = []
-        self.appleHistory = []  # Stores apple at target time step
-        self.stepsSinceLastApple = []
-        self.scoreHistory = []
-        self.stepCount = 0
-        self.directionHistory = []
-        self.foodDistance = []
-        self.SnakeAfterFood = []  # Stores the snake when it last ate
-        self.AppleList = []  # Stores apple each time it is generated
-        EPSILON = 0.3
-        self.gameTotal = 0
-        self.FinalScore = 0  # Stores apple each time it is generated
 
-        #fun test
-        # self.fig, self.ax = plt.subplots()
-        self.fig, self.ax = plt.subplots(figsize=(3, 2), dpi=80)
-        (self.line,) = self.ax.plot([], [], label="Score")
 
-        # 3. Setup static labels once
-        self.ax.set_title("Score")
-        self.ax.set_xlabel("Game")
-        self.ax.set_ylabel("Score")
-        # plt.show(block=False)
+# Grid size dropdown.                   ROW 0                         CONTROLLER NAME = 
+tk.Label( root, text="Grid size:",).grid(row=0, column=0, padx=5, pady=3, sticky=tk.W)
+grid_size = ttk.Combobox( root, values=["Small", "Medium", "Large", "Extra Large"], state="readonly",)
+grid_size.grid(row=0, column=1, padx=5, pady=5, sticky=tk.W)
+
+
+# Training Algorithm dropdown.          ROW 1
+tk.Label(root, text="Algorithm:",).grid(row=1, column=0, padx=3, pady=5, sticky=tk.W)
+eye_color = ttk.Combobox(root, values=["Fruit Fly", "Epsilon greedy", "Q-learining", "Modified Q learning", "NN"],state="readonly",)
+eye_color.grid(row=1, column=1, padx=5, pady=5, sticky=tk.W)
+
+
+# norm dropdown.                         ROW 2
+tk.Label(root, text="Norm:",).grid(row=2, column=0, padx=1, pady=1, sticky=tk.W)
+norm = ttk.Combobox(root, values=["L1", "L2", "Infinity"], state="readonly")
+norm.grid(row=2, column=1, padx=1, pady=1, sticky=tk.W)
+
+
+
+
+                                                                        # PARAM ENTRY BOXES
+
+
+# Epochs entry.                        ROW 3
+tk.Label(root,text="epochs:",).grid(row=3, column=0, padx=5, pady=3, sticky=tk.W)
+epochs = ttk.Entry(root)
+epochs.grid(row=3, column=1, padx=5, pady=3, sticky=tk.W)
+epochs.insert(0, 100)
+
+# game total                           ROW 4
+tk.Label(root, text="games per\n epoch:(future)", ).grid(row=4, column=0, padx=5, pady=3, sticky=tk.W)
+gameTotal = ttk.Entry(root)
+gameTotal.grid(row=4, column=1, padx=5, pady=3, sticky=tk.W)
+
+
+
+                                                                        # Slide controls
+# Gamma.                               ROW 5
+Gamma = tk.Scale(root, from_=0.0, to=1.0, orient = tk.HORIZONTAL)
+Gamma.grid(row=5, column=1, padx=5, pady=3, sticky=tk.W)
+Gamma.set(0.1)
+tk.Label(root, text="Gamma:", ).grid(row=5, column=0, padx=5, pady=3, sticky=tk.W)
+Gamma.grid(row=5, column=1, padx=5, pady=4, sticky=tk.W)
+
+# Epsilon                              ROW 6
+Epsilon = tk.Scale(root, from_=0.0, to=1.0, orient = tk.HORIZONTAL)
+Epsilon.grid(row=6, column=1, padx=5, pady=3, sticky=tk.W)
+Epsilon.set(0.1)
+tk.Label(root, text="Epsilon:", ).grid(row=6, column=0, padx=5, pady=3, sticky=tk.W)
+
+
+# set Render Speed                      ROW 7
+Speed = tk.Scale(root, from_=0, to=100, orient = tk.HORIZONTAL)
+Speed.grid(row=7, column=1, padx=5, pady=3, sticky=tk.W)
+tk.Label(root, text="Render Speed:", ).grid(row=7, column=0, padx=3, pady=5, sticky=tk.W)
+
+
+
+
+
+
+
+
+                                                                #BOTTOM ROW BUTTONS HERE (ROW 8)
+def updateParams():
+    global startedGameLoop
+    if epochs.get() != "":
+        sn.EPOCHS = int(epochs.get())
+    if Gamma.get() != "":
+        sn.GAMMA = epochs.get()    
+    if Epsilon.get() != "":
+        sn.EPSILON = epochs.get()        
+    sn.SPEED = Speed.get()
+
+    sn.agent.norm = norm.get().lower()
+
+    print("Updated norm:", sn.agent.norm)
+    # gameOver = False
+
+# reset buton                        ROW 8.               #command = reset (is in the snake file)
+reset = ttk.Button(root, text="Reset", command = sn.reset)
+reset.grid(row=8, column=0, padx=5, pady=10, sticky=tk.W)
+command=setScreenSize
+
+#stop training
+stop = ttk.Button(root, text="update params", command = updateParams)
+stop.grid(row=8, column=1, padx=5, pady=10, sticky=tk.W)
+
+#start training button
+start = ttk.Button(root, command=setScreenSize, text="Start Training",)
+start.grid(row=8, column=2, columnspan=2, padx=5, pady=5, sticky=tk.W)
+
+
+
+#start training button
+def button():
+    setattr(sn, "show", not sn.show)
+    if(not sn.show):
+        showGame.config(text="Show Gameplay")
+    else:
+        showGame.config(text="Hide Game Play")
+    
+showGame = ttk.Button(root, text="Hide Game Play", command = button)
+showGame.grid(row=7, column=4, columnspan=2, padx=5, pady=5, sticky=tk.W)
+
+
+
+# plot function is created for 
+# plotting the graph in 
+# tkinter window
+def plot():
 
     
-    def addStats(self, snake, apple, stepCount, score, direction):
-        # global df, snakeHistory, appleHistory, stepsSinceLastApple, score, stepCount, directionHistory, direction, snake, apple 
-        self.snakeHistory.append(snake)
-        self.appleHistory.append(apple)
-        self.stepsSinceLastApple.append(stepCount)
-        self.scoreHistory.append(score)
-        self.directionHistory.append(direction)
-        self.foodDistance.append(abs(snake[0][0]-apple[0]) + abs(snake[0][1]-apple[1]))
-        
-    def resetPlayer():
-        self.snakeHistory.clear()
-        self.appleHistory.clear()
-        self.stepsSinceLastApple.clear()
-        self.scoreHistory.clear()
-        self.directionHistory.clear()
-        self.foodDistance.clear()
+    plot_frame = ttk.Frame(root)  #attach plot frame to main window
+    
+    fig = sn.agent.fig
+    canvas = FigureCanvasTkAgg(fig, master = plot_frame)  ##attach the plot to a canvas
+    canvas.draw()
+    # # canvas.draw_idle()
 
-    def getDistance(self,direction):
-        apple = self.appleHistory[-1]
-        snake = self.snakeHistory[-1][0]        
-        snake = (snake[0]+direction[0], snake[1]+direction[1])
-        # return abs(abs(snake[0]-apple[0])**2 + abs(snake[1]-apple[1])**2)
-        return max(
-        abs(snake[0] - apple[0]),
-        abs(snake[1] - apple[1])
-    )
+    # # # placing the canvas on the Tkinter window
+    canvas.get_tk_widget().pack()
 
-    def getDirection(self):
-        # if(len(self.directionHistory) == 0):
-        #     return (0,1)
-        snake = self.snakeHistory[-1]
-        direction = self.directionHistory[-1]
-        inverseDir = (direction[0]*-1,direction[1]*-1)
-        options = []
-        InverseCase = True
-        directionList = []#[(0,1), (0,-1), (1,0), (-1,0)]
-        if(inverseDir != (0,1)):
-            snake_copy = moveSnake(snake, (0,1))
-            if(not collisionCheck(snake_copy)):
-                options.append(self.getDistance((0,1)))
-                directionList.append((0,1))
-        if(inverseDir != (0,-1)):
-            snake_copy = moveSnake(snake, (0,-1))
-            if(not collisionCheck(snake_copy)):
-                options.append(self.getDistance((0,-1)))
-                directionList.append((0,-1))
-        if(inverseDir != (1,0)):
-            snake_copy = moveSnake(snake, (1,0))
-            if(not collisionCheck(snake_copy)):
-                options.append(self.getDistance((1,0)))
-                directionList.append((1,0))
-        if(inverseDir != (-1,0)):
-            snake_copy = moveSnake(snake, (-1,0))
-            if(not collisionCheck(snake_copy)):
-                options.append(self.getDistance((-1,0)))
-                directionList.append((-1,0))
+    # # # creating the Matplotlib toolbar
+    # toolbar = NavigationToolbar2Tk(canvas,
+    #                                plot_frame)
+    # toolbar.update()
+    plot_frame.grid(row=0, column=4, rowspan=7, padx=20, pady=10)
 
 
-           # consider right and left  IE
-        
-        min = 99999999999999
-        for x,y in zip(options, directionList):
-            if min> x:
-                min = x
-                direction = y
-        if(len(options) == 0):
-            return (0,1)
-        return direction
+    return plot_frame
 
-    def makePlot(self):
-        games = list(range(1, len(self.finalScoreList) + 1))
 
-        self.line.set_xdata(games)
-        self.line.set_ydata(self.finalScoreList)
 
-        self.ax.relim()
-        self.ax.autoscale_view()
+plot()
+if(sn.gameOver):
+    # plot_canvas.draw_idle()
+    plot()
 
-        self.fig.canvas.draw_idle()
 
-        return self.fig
 
-    def gameOver(self):
-        #make a plot of progress
-        #print total scores
-        #reset everything
+t2 = threading.Thread(target=root.mainloop())
+t2.start()
 
-        #what types of plots:
-            # line plot
-            # histogram of the scores
-            # matplotlib.pyplot.plot(*args, scalex=True, scaley=True, data=None, **kwargs)[source]
-        self.finalScoreList.append(self.scoreHistory[-1])
-        self.df = pd.DataFrame(
-                            {
-                                "snake": self.snakeHistory,
-                                "apple": self.appleHistory,
-                                "stepsSinceLastApple": self.stepsSinceLastApple,
-                                "score": self.scoreHistory,
-                                "direction": self.directionHistory
-                            }
-                        )
-        self.GameHistory.append(self.df)
-        self.df = pd.DataFrame()
-        self.gameTotal = self.gameTotal+1
-        self.FinalScore = 0 #set final score to 0. 
-        return self.makePlot()
+
