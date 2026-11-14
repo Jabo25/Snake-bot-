@@ -3,8 +3,11 @@ I am creating a snake bot that uses a GUI control system with drop down menus to
 
 
 This repository serves as the template for your course project. Below is an explanation of the structure of the project and the purpose of each file. Your project must retain this basic structure. As you progress, you should add details about your specific project to this readme (e.g., Replace "This file will contain the implementations of the AI algorithms/agents used in your project" with "This file contains the implementations of the X, Y, and Z algorithms..."). 
+## Start Demo
 
+![Start demo](start_training.png)
 ---
+
 
 ### 1. `algorithms.py`
 Algorithm.py contains the 
@@ -12,7 +15,10 @@ This file will contain the implementations of the AI algorithms/agents used in y
 - Ensure your code is well-documented with comments explaining each algorithm.
 
 ### 2. `comparisons.py`  
-I splurged and made a GUI, so comparisons.py functionality will be handled through the gui.   
+I splurged and made a GUI, so comparisons.py functionality will be handled through the gui.
+
+![Start demo](snake_graph.png)
+
 
 ### 3. `demo.py`  
 This file stores the GUI of my snake game. Pressing start training starts training. It also resets training right now. Still has some things that need adjusting, but these are quick fixes that will be separate from the main project. The biggest hurdle was setting up the GUI and embedding the graph. 
