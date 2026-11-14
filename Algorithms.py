@@ -53,7 +53,7 @@ gameOver = False
 
 #extra statistics for the snake
 agent = st.player()#make player object
-
+canvas_rects = {}
 
 #takes keyboard inputa and moves the snake
 def getDirection(event):
@@ -82,6 +82,8 @@ def moveSnake(snake_clone, dir_clone):
     snake.insert(0, (head[0]+direction[0], head[1]+direction[1]))
     if(show):
         renderSnake(snake[0][0],snake[0][1], False)
+
+        
     return snake
 
     
@@ -131,20 +133,29 @@ def makeApple():
 
 def renderSnake(x,y, remove):
     
-    global  color
+    global  color, canvas_rects
     pixel_x = SQUARE_SIZE[0] * x
     pixel_y = SQUARE_SIZE[1] * y
 
     if not remove:
-        canvas.create_rectangle(
+        rect_id = canvas.create_rectangle(
             pixel_x,
             pixel_y,
             pixel_x + SQUARE_SIZE[0],
             pixel_y + SQUARE_SIZE[1],
             fill=SNAKE_COLOR
         )
+        canvas_rects[(x, y)] = rect_id
+        # canvas.create_rectangle(
+        #     pixel_x,
+        #     pixel_y,
+        #     pixel_x + SQUARE_SIZE[0],
+        #     pixel_y + SQUARE_SIZE[1],
+        #     fill=SNAKE_COLOR
+        # )
     else:
         # pygame.draw.rect(surface, (0,0,0), rect)
+        rect_id = canvas_rects.pop((x, y), None)
         canvas.create_rectangle(
             pixel_x,
             pixel_y,
@@ -153,6 +164,8 @@ def renderSnake(x,y, remove):
             fill=BG_COLOR,
             outline=BG_COLOR
         )
+        if rect_id is not None:
+            canvas.delete(rect_id)
     
     # rgb = pygame.image.tobytes(surface, "RGB")# this creates 
     # image = Image.frombytes("RGB", surface.get_size(), rgb)
@@ -166,6 +179,7 @@ def hasEaten(snake_copy):
     if snake_copy == None:
         if snake[0] == apple:
             snake.append(tail)
+            renderSnake(tail[0], tail[1], False)
             if len(snake) == GRID_SIZE[0]*GRID_SIZE[1]:
                 print("you won")
             else:
@@ -199,6 +213,14 @@ def start():
     direction = (0,1)
     makeApple()
     agent.addStats(snake, apple, stepCount, score, direction)
+    snake = [(GRID_SIZE[0] / 2, GRID_SIZE[1] / 2)]
+    tail = snake[-1]
+    score = 0
+    direction = (0, 1)
+    stepCount = 0
+
+
+    
     # plot = agent.gameOver() #returns the plot object so that the gui doesn't have a null object for the plot. might break stuff?
 
 
