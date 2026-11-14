@@ -5,7 +5,7 @@ I am creating a snake bot that uses a GUI control system with drop-down menus to
 
 ## Start Demo 
 #(algorithm selection button doesn't do anything now) 
-Should run 100 rounds of snake **(YOU DON'T WATCH THE ENTIRE THING)**
+Should run 100 rounds of snake **(YOU DON'T NEED TO WATCH THE ENTIRE THING)**
 Start training also resets the game board if you want to change board sizes. The hide gameplay button is also functional. 
 
 ![Start demo](start_training.png)
