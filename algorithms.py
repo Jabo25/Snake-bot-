@@ -29,22 +29,12 @@ GAMMA = 0
 def moveSnake(snake_clone1, dir_clone1):
         snake_clone = snake_clone1.copy()
         dir_clone = dir_clone1
-    # if(snake_clone == None):
-        # head = snake[0]
-        # tail = snake[-1]
-        # snake.pop()
-        # snake.insert(0, (head[0]+direction[0], head[1]+direction[1]))
-        # if(show):
-            # renderSnake(snake[0][0],snake[0][1], False)
-        # return snake
-    # else:
+
         head = snake_clone[0]
         tail = snake_clone[-1]
         tail = snake_clone[-1]
         snake_clone.pop()
         snake_clone.insert(0, (head[0]+dir_clone[0], head[1]+dir_clone[1]))
-        # if(show):
-            # renderSnake(snake[0][0],snake[0][1], False)
         return snake_clone
 
     
@@ -180,45 +170,6 @@ class player:
             return (0,1)
         return direction
 
-    # def makePlot(self):
-    #     # the figure that will contain the plot
-    #     fig = Figure(figsize = (5, 5),
-    #                 dpi = 100)
-    #     plot1 = fig.add_subplot(111)
-
-
-    #     # plt.pyplot.plot(title = "score", scalex=True, scaley=True, data=self.finalScoreList,)
-    #     games = list(range(len(self.finalScoreList)))
-
-        
-        
-    #     # self.fig, self.ax = plt.subplots()
-    #     plot1.plot([], [], label="Score")
-        
-    #     # 3. Setup static labels once
-    #     plot1.set_title("Score")
-    #     plot1.set_xlabel("Game")
-    #     plot1.set_ylabel("Score")
-    #     plot1.set_data(games,self.finalScoreList)
-    #     plot1.relim()
-    #     plot1.autoscale_view()
-    #     # plot1.set_ydata()
-        
-
-
-    #     # 6. Adjust the axis limits dynamically so everything stays in view
-    #     if self.finalScoreList:
-    #         plot1.set_xlim(0, max(1, len(self.finalScoreList) - 1))
-    #         plot1.set_ylim(min(self.finalScoreList) - 1, max(self.finalScoreList) + 1)
-    #         # plot1.set_xlim(0, max(1, len(self.finalScoreList) - 1))
-    #         # plot1.set_ylim(min(self.finalScoreList) - 1, max(self.finalScoreList) + 1)
-            
-
-    #     # 7. Redraw the canvas and flush the GUI events to render the change
-    #     fig.canvas.draw()
-    #     fig.canvas.flush_events()
-    #     return fig
-
     def makePlot(self):
         games = list(range(1, len(self.finalScoreList) + 1))
 
@@ -256,96 +207,3 @@ class player:
         self.gameTotal = self.gameTotal+1
         self.FinalScore = 0 #set final score to 0. 
         return self.makePlot()
-
-    # @might remove this line might be pointless. 
-        # while(len(self.snakeHistory) != 0):
-        #     self.snakeHistory.pop()
-        #     self.appleHistory.pop()
-        #     self.stepsSinceLastApple.pop()
-        #     self.scoreHistory.pop()
-        #     self.directionHistory.pop()
-        #     self.foodDistance.pop()
-         
-                
-        
-
-
-
-# class Qlearning(player):
-#     def bark(self):
-#         return
-# class SARSA(player):
-#     def test():
-#         return
-# class fruitfly(player):
-#     def test():
-#         return
-
-
-
-
-#     def updateStats():
-#         print("this method is to update the player stats and upload it to the player object")
-
-#     #this method is to update the direction the player is moving iisory
-#     def getMove():
-#         snake_copy.foodDistance.append(abs(snake[0][0]-apple[0]) + abs(snake[0][1]-apple[1]))
-#         return direction
-
-# class MyClass:
-#     def __init__(self, attribute1, attribute2):
-#         """
-#         Initialize the class
-#         """
-#         self.attribute1 = attribute1
-#         self.attribute2 = attribute2
-
-#     def method1(self):
-#         """
-#         Description of method1.
-#         """
-#         pass
-
-#     def method2(self, parameter):
-#         """
-#         Description of method2.
-#         """
-#         pass
-
-#     def __str__(self):
-#         """
-#         Return a readable string representation.
-#         """
-#         return f"MyClass({self.attribute1}, {self.attribute2})"
-
-
-# # Create an instance
-# my_object = MyClass(value1, value2)
-
-# # Call methods
-# my_object.method1()
-# my_object.method2(parameter)
-
-
-
-
-
-    # def makePlot(self):
-    #         # the figure that will contain the plot
-
-    #     # plt.pyplot.plot(title = "score", scalex=True, scaley=True, data=self.finalScoreList,)
-    #     games = list(range(len(self.finalScoreList)))
-
-
-    #     # 5. Update the existing line's data instead of drawing a new one
-    #     self.line.set_xdata(games)
-    #     self.line.set_ydata(self.finalScoreList)
-
-    #     # 6. Adjust the axis limits dynamically so everything stays in view
-    #     if self.finalScoreList:
-    #         self.ax.set_xlim(0, max(1, len(self.finalScoreList) - 1))
-    #         self.ax.set_ylim(min(self.finalScoreList) - 1, max(self.finalScoreList) + 1)
-
-    #     # 7. Redraw the canvas and flush the GUI events to render the change
-    #     self.fig.canvas.draw()
-    #     self.fig.canvas.flush_events()
