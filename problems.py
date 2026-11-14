@@ -129,8 +129,11 @@ class player:
         apple = self.appleHistory[-1]
         snake = self.snakeHistory[-1][0]        
         snake = (snake[0]+direction[0], snake[1]+direction[1])
-        return abs(abs(snake[0]-apple[0]) + abs(snake[1]-apple[1]))
-
+        # return abs(abs(snake[0]-apple[0])**2 + abs(snake[1]-apple[1])**2)
+        return max(
+        abs(snake[0] - apple[0]),
+        abs(snake[1] - apple[1])
+    )
 
     def getDirection(self):
         # if(len(self.directionHistory) == 0):
@@ -139,6 +142,7 @@ class player:
         direction = self.directionHistory[-1]
         inverseDir = (direction[0]*-1,direction[1]*-1)
         options = []
+        InverseCase = True
         directionList = []#[(0,1), (0,-1), (1,0), (-1,0)]
         if(inverseDir != (0,1)):
             snake_copy = moveSnake(snake, (0,1))
@@ -160,6 +164,9 @@ class player:
             if(not collisionCheck(snake_copy)):
                 options.append(self.getDistance((-1,0)))
                 directionList.append((-1,0))
+
+
+           # consider right and left  IE
         
         min = 99999999999999
         for x,y in zip(options, directionList):
