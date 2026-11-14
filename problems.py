@@ -112,6 +112,7 @@ class player:
         self.ax.set_title("Score")
         self.ax.set_xlabel("Game")
         self.ax.set_ylabel("Score")
+        self.norm = "l1"
         # plt.show(block=False)
 
     
@@ -124,16 +125,27 @@ class player:
         self.directionHistory.append(direction)
         self.foodDistance.append(abs(snake[0][0]-apple[0]) + abs(snake[0][1]-apple[1]))
         
+    def resetPlayer():
+        self.snakeHistory.clear()
+        self.appleHistory.clear()
+        self.stepsSinceLastApple.clear()
+        self.scoreHistory.clear()
+        self.directionHistory.clear()
+        self.foodDistance.clear()
 
     def getDistance(self,direction):
         apple = self.appleHistory[-1]
         snake = self.snakeHistory[-1][0]        
         snake = (snake[0]+direction[0], snake[1]+direction[1])
+        print(self.norm)
         # return abs(abs(snake[0]-apple[0])**2 + abs(snake[1]-apple[1])**2)
-        return max(
-        abs(snake[0] - apple[0]),
-        abs(snake[1] - apple[1])
-    )
+        if self.norm == "l1":
+            return abs(abs(snake[0] - apple[0]) +  abs(snake[1] - apple[1]))
+        elif self.norm == "l2":
+            return abs(abs(snake[0]-apple[0])**2 + abs(snake[1]-apple[1])**2)
+        else:
+            return max(abs(snake[0] - apple[0]), abs(snake[1] - apple[1]))
+
 
     def getDirection(self):
         # if(len(self.directionHistory) == 0):
