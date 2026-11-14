@@ -26,7 +26,7 @@ This file stores the GUI of my snake game. Pressing start training starts traini
 ### 4. `problems.py`  
 This file currently has my game loop in it. My game loop is a nightmare. I initially coded it in pygame before realizing I couldn't embed pygame into tkinter because pygame and tkinter both wanted to hog the main OS thread; without multithreading, the pygame loop stops tkinter from refreshing. I spent a day converting the loop to run in tkinter. However, tkinter is a bottleneck and loops slowly. I plan on converting the loops to python and having a function that animates the states of the array for me. 
 
-
+###Delete below this for later but good reference. 
 This file will contain the implementation of the problems you are solving with your AI algorithms.  
 - Ensure that the problems are clearly defined and modular, so the algorithms can be easily tested on each.  
 - For the **progress report**, this file should be fully implemented and require no major edits afterward.
