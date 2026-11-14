@@ -11,7 +11,7 @@ Should run 100 rounds of snake. Pressing restart game should reset the snake gam
 
 
 ### 1. `algorithms.py`
-Algorithm.py contains the agent object that controls the game. I wanted to set it up so that the agent had access to a bunch of game stats from the main file, and then, I could use inheritance to change the agent function. Ideally, I have the GUI spawn an agent and then pass the agent to the other file. Algotithms.py and problems.py are flipped in functionality right now. Problems.py has the game loop and algorithms has the agent right now. There is a bug where when the apple is above the snake, the snake goes away from the apple before turning around and moving back towards the apple after it is made rational by running into a wall. 
+My game loop is a nightmare and the next big thing I'm fixing. I initially coded it in pygame before realizing I couldn't embed pygame into tkinter because pygame and tkinter both wanted to hog the main OS thread; without multithreading, the pygame loop stops tkinter from refreshing. I spent a day converting the loop to run in tkinter. However, tkinter is a bottleneck and loops slowly. I plan on converting the loops to python and having a function that animates the states of the array for me. 
 
 ### 2. `comparisons.py`  
 I splurged and made a GUI, so comparisons.py functionality will be handled through the gui.
@@ -24,7 +24,8 @@ This file stores the GUI of my snake game. Pressing start training starts traini
 
 
 ### 4. `problems.py`  
-This file currently has my game loop in it. My game loop is a nightmare. I initially coded it in pygame before realizing I couldn't embed pygame into tkinter because pygame and tkinter both wanted to hog the main OS thread; without multithreading, the pygame loop stops tkinter from refreshing. I spent a day converting the loop to run in tkinter. However, tkinter is a bottleneck and loops slowly. I plan on converting the loops to python and having a function that animates the states of the array for me. 
+
+Algorithm.py contains the agent object that controls the game. I wanted to set it up so that the agent had access to a bunch of game stats from the main file, and then, I could use inheritance to change the agent function. Ideally, I have the GUI spawn an agent and then pass the agent to the other file. There is a bug where when the apple is above the snake, the snake goes away from the apple before turning around and moving back towards the apple after it is made rational by running into a wall. 
 
 ###Delete below this for later but good reference. 
 This file will contain the implementation of the problems you are solving with your AI algorithms.  
