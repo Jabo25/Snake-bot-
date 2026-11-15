@@ -101,18 +101,20 @@ def setScreenSize():
 tk.Label( root, text="Grid size:",).grid(row=0, column=0, padx=5, pady=3, sticky=tk.W)
 grid_size = ttk.Combobox( root, values=["Small", "Medium", "Large", "Extra Large"], state="readonly",)
 grid_size.grid(row=0, column=1, padx=5, pady=5, sticky=tk.W)
+grid_size.set("Large")
 
 
 # Training Algorithm dropdown.          ROW 1
 tk.Label(root, text="Algorithm:",).grid(row=1, column=0, padx=3, pady=5, sticky=tk.W)
-eye_color = ttk.Combobox(root, values=["Fruit Fly", "Epsilon greedy", "Q-learining", "Modified Q learning", "NN"],state="readonly",)
+eye_color = ttk.Combobox(root, values=["Fruit Fly", "Epsilon greedy", "Q-learining", "Modified Q learning", "NN", "Distance Heuristic"],state="readonly",)
 eye_color.grid(row=1, column=1, padx=5, pady=5, sticky=tk.W)
-
+eye_color.set("Distance Heuristic")
 
 # norm dropdown.                         ROW 2
 tk.Label(root, text="Norm:",).grid(row=2, column=0, padx=1, pady=1, sticky=tk.W)
 norm = ttk.Combobox(root, values=["L1", "L2", "Infinity"], state="readonly")
 norm.grid(row=2, column=1, padx=1, pady=1, sticky=tk.W)
+norm.set("L2")
 
 
 
@@ -135,14 +137,14 @@ gameTotal.grid(row=4, column=1, padx=5, pady=3, sticky=tk.W)
 
                                                                         # Slide controls
 # Gamma.                               ROW 5
-Gamma = tk.Scale(root, from_=0.0, to=1.0, orient = tk.HORIZONTAL)
+Gamma = tk.Scale(root, from_=0.0, to=1.0,    resolution=0.01, orient = tk.HORIZONTAL)
 Gamma.grid(row=5, column=1, padx=5, pady=3, sticky=tk.W)
 Gamma.set(0.1)
 tk.Label(root, text="Gamma:", ).grid(row=5, column=0, padx=5, pady=3, sticky=tk.W)
 Gamma.grid(row=5, column=1, padx=5, pady=4, sticky=tk.W)
 
 # Epsilon                              ROW 6
-Epsilon = tk.Scale(root, from_=0.0, to=1.0, orient = tk.HORIZONTAL)
+Epsilon = tk.Scale(root, from_=0.0, to=1.0,    resolution=0.01,  orient = tk.HORIZONTAL)
 Epsilon.grid(row=6, column=1, padx=5, pady=3, sticky=tk.W)
 Epsilon.set(0.1)
 tk.Label(root, text="Epsilon:", ).grid(row=6, column=0, padx=5, pady=3, sticky=tk.W)
@@ -177,17 +179,35 @@ def updateParams():
     # gameOver = False
 
 # reset buton                        ROW 8.               #command = reset (is in the snake file)
-reset = ttk.Button(root, text="Reset", command = sn.reset)
-reset.grid(row=8, column=0, padx=5, pady=10, sticky=tk.W)
-command=setScreenSize
 
-#stop training
-stop = ttk.Button(root, text="update params", command = updateParams)
-stop.grid(row=8, column=1, padx=5, pady=10, sticky=tk.W)
+button_frame = ttk.Frame(root)
+button_frame.grid(row=7, column=2, columnspan=4, sticky=tk.W, padx=5)
 
-#start training button
-start = ttk.Button(root, command=setScreenSize, text="Start Training",)
-start.grid(row=8, column=2, columnspan=2, padx=5, pady=5, sticky=tk.W)
+reset = ttk.Button(button_frame, text="Reset", command=sn.reset)
+reset.grid(row=0, column=0, padx=3, pady=5)
+
+stop = ttk.Button(button_frame, text="Update Params", command=updateParams)
+stop.grid(row=0, column=2, padx=(65,10), pady=5)
+
+
+
+start = ttk.Button(button_frame, text="Start Training", command=setScreenSize)
+start.grid(row=0, column=1, padx=3, pady=5)
+
+
+# reset = ttk.Button(root, text="Reset", command = sn.reset)
+# reset.grid(row=7, column=2, padx=1, pady=5, sticky=tk.W)
+# command=setScreenSize
+# # tk.Label(root, text="Render Speed:", ).grid(row=7, column=2, padx=3, pady=5, sticky=tk.W)
+
+
+# #stop training
+# stop = ttk.Button(root, text="update params", command = updateParams)
+# stop.grid(row=7, column=3, padx=1, pady=5, sticky=tk.W)
+
+# #start training button
+# start = ttk.Button(root, command=setScreenSize, text="Start Training",)
+# start.grid(row=7, column=4, columnspan=2, padx=1, pady=5, sticky=tk.W)
 
 
 
@@ -198,9 +218,15 @@ def button():
         showGame.config(text="Show Gameplay")
     else:
         showGame.config(text="Hide Game Play")
-    
-showGame = ttk.Button(root, text="Hide Game Play", command = button)
-showGame.grid(row=7, column=4, columnspan=2, padx=5, pady=5, sticky=tk.W)
+
+showGame = ttk.Button(button_frame, text="Hide Game Play", command=button)
+showGame.grid(row=0, column=3, padx=(80, 30), pady=5)    
+showGame = ttk.Button(button_frame, text="Hide Game Play", command=button)
+# showGame.grid(row=0, column=3, padx=7, pady=5)
+# showGame = ttk.Button(root, text="Hide Game Play", command = button)
+# showGame.grid(row=7, column=5, columnspan=2, padx=1, pady=5, sticky=tk.W)
+
+
 
 
 
