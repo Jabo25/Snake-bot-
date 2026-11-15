@@ -125,7 +125,7 @@ class player:
         self.directionHistory.append(direction)
         self.foodDistance.append(abs(snake[0][0]-apple[0]) + abs(snake[0][1]-apple[1]))
         
-    def resetPlayer():
+    def resetPlayer(self):
         self.snakeHistory.clear()
         self.appleHistory.clear()
         self.stepsSinceLastApple.clear()
@@ -133,11 +133,13 @@ class player:
         self.directionHistory.clear()
         self.foodDistance.clear()
 
+
+        
+
     def getDistance(self,direction):
         apple = self.appleHistory[-1]
         snake = self.snakeHistory[-1][0]        
         snake = (snake[0]+direction[0], snake[1]+direction[1])
-        print(self.norm)
         # return abs(abs(snake[0]-apple[0])**2 + abs(snake[1]-apple[1])**2)
         if self.norm == "l1":
             return abs(abs(snake[0] - apple[0]) +  abs(snake[1] - apple[1]))
@@ -150,6 +152,9 @@ class player:
     def getDirection(self):
         # if(len(self.directionHistory) == 0):
         #     return (0,1)
+        if not self.snakeHistory or not self.snakeHistory[-1]:
+            return (0, 1)
+
         snake = self.snakeHistory[-1]
         direction = self.directionHistory[-1]
         inverseDir = (direction[0]*-1,direction[1]*-1)
@@ -211,7 +216,9 @@ class player:
             # line plot
             # histogram of the scores
             # matplotlib.pyplot.plot(*args, scalex=True, scaley=True, data=None, **kwargs)[source]
-        self.finalScoreList.append(self.scoreHistory[-1])
+        if(len(self.scoreHistory) != 0):
+            self.finalScoreList.append(self.scoreHistory[-1])
+        
         self.df = pd.DataFrame(
                             {
                                 "snake": self.snakeHistory,
@@ -225,4 +232,10 @@ class player:
         self.df = pd.DataFrame()
         self.gameTotal = self.gameTotal+1
         self.FinalScore = 0 #set final score to 0. 
-        return self.makePlot()
+
+
+        if len(self.scoreHistory) !=0:
+            return self.makePlot()
+        else:
+            return self.fig
+        # return self.makePlot()
