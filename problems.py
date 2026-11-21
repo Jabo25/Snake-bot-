@@ -1,149 +1,46 @@
+
+#this will be renamed to assist with the player agent. 
+#through inheretence, the player object type will be modified to deal with new algorithms. 
+#the inhereted class will be an algorithm object which is going to be a player atruibute
 import threading
-import random
+import multiprocessing
 import pandas as pd
+import matplotlib.pyplot as plt
 import tkinter as tk
-# import keyboard
-import time
-import problems as st
-
-
-# pip3 install plot
-#pip3 install pandas
-# pip3 install keyboard
-# set environment constants
-
+from tkinter import ttk
+from tkinter import * 
+from matplotlib.figure import Figure
+from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg, 
+                                               NavigationToolbar2Tk)
+root = tk.Tk()
+#maybe make an object called a game to store the local game stats. 
 
 # set environment constants
 GRID_SIZE = (50,50)
 RESOLUTION = (600,600)
 SQUARE_SIZE = (RESOLUTION[0]/(GRID_SIZE[0]),RESOLUTION[1]/(GRID_SIZE[1])) #body seg size
-SPEED = 0
+SPEED = 100
 EPOCHS = 100
 EPSILON = 1
 GAMMA = 0
-plot = None
-#make screen appear
-SNAKE_COLOR = "#00FF00"
-FOOD_COLOR = "#FF0000"
-BG_COLOR = "#000000"
-gameTotal = 0
-show = True
-window = tk.Tk()
-window.title("Snake Game")
-window.resizable(False, False)
-label = tk.Label(window, text=f"Score: {0} game total:{0} ", font=("Consolas", 20))
-label.pack()
-canvas = tk.Canvas(window, bg=BG_COLOR, height=RESOLUTION[1], width=RESOLUTION[0])
-canvas.pack()
-window.update()
-reset = False # tells game to reset in the game loop. 
-#game controller (stores current vars agent stores curr + past vars)
-snake = [(GRID_SIZE[0]/2, GRID_SIZE[1]/2)]
-tail = snake[-1]
-apple = ()
-score = 0
-direction = (0,1)
-score = 0
-gamesPlayed = 0
 
-#reset environment/restart game vars(locks)
-state = False
-gameOver = False
-
-
-#extra statistics for the snake
-agent = st.player()#make player object
-canvas_rects = {}
-apple_rect_id = None
-
-
-
-
-#render the snake. Will be replaced with render every 1000 turns
-def renderSnake(x,y, remove):
-    
-    global  color, canvas_rects, apple_rect_id, apple
-
-    if apple_rect_id is not None:
-        canvas.delete(apple_rect_id)
-    pixel_x = SQUARE_SIZE[0] * apple[0]
-    pixel_y = SQUARE_SIZE[1] * apple[1]
-    apple_rect_id = canvas.create_rectangle(
-        pixel_x, pixel_y,
-        pixel_x + SQUARE_SIZE[0], pixel_y + SQUARE_SIZE[1],
-        fill=FOOD_COLOR
-    )
-    pixel_x = SQUARE_SIZE[0] * x
-    pixel_y = SQUARE_SIZE[1] * y
-
-    if not remove:
-        rect_id = canvas.create_rectangle(
-            pixel_x,
-            pixel_y,
-            pixel_x + SQUARE_SIZE[0],
-            pixel_y + SQUARE_SIZE[1],
-            fill=SNAKE_COLOR
-        )
-        canvas_rects[(x, y)] = rect_id
-        # canvas.create_rectangle(
-        #     pixel_x,
-        #     pixel_y,
-        #     pixel_x + SQUARE_SIZE[0],
-        #     pixel_y + SQUARE_SIZE[1],
-        #     fill=SNAKE_COLOR
-        # )
-    else:
-        # pygame.draw.rect(surface, (0,0,0), rect)
-        rect_id = canvas_rects.pop((x, y), None)
-        canvas.create_rectangle(
-            pixel_x,
-            pixel_y,
-            pixel_x + SQUARE_SIZE[0],
-            pixel_y + SQUARE_SIZE[1],
-            fill=BG_COLOR,
-            outline=BG_COLOR
-        )
-        if rect_id is not None:
-            canvas.delete(rect_id)
-
-
-
-#takes keyboard inputa and moves the snake
-def getDirection(event):
-    global direction, agent
-    if(direction == "up"):
-        if event.keysym == "Left" and direction != (1, 0):
-            direction = (-1, 0)
-        elif event.keysym == "Right" and direction != (-1, 0):
-            direction = (1, 0)
-        elif event.keysym == "Up" and direction != (0, 1):
-            direction = (0, -1)
-        elif event.keysym == "Down" and direction != (0, -1):
-            direction = (0, 1)
-        
-    direction = agent.getDirection()
-    return direction
 
 #modes the snake in most recent direction
-def moveSnake(snake_clone, dir_clone):
-    global snake, direction, tail
+def moveSnake(snake_clone1, dir_clone1):
+        snake_clone = snake_clone1.copy()
+        dir_clone = dir_clone1
 
+        head = snake_clone[0]
+        tail = snake_clone[-1]
+        tail = snake_clone[-1]
+        snake_clone.pop()
+        snake_clone.insert(0, (head[0]+dir_clone[0], head[1]+dir_clone[1]))
+        return snake_clone
 
-    head = snake[0]
-    tail = snake[-1]
-    snake.pop()
-    snake.insert(0, (head[0]+direction[0], head[1]+direction[1]))
-    if(show):
-        renderSnake(snake[0][0],snake[0][1], False)
-
-        
-    return snake
-
-    
 
 #this function checks for collisions which would end the game  
-def collisionCheck(snake_clone):
-    global gameTotal
+def collisionCheck(snake_clone1):
+    snake_clone = snake_clone1.copy()
     global snake
     if(snake_clone == None):
         snake_clone = snake
@@ -154,36 +51,16 @@ def collisionCheck(snake_clone):
                 collision = True
     if snake_clone[0][0] < 0 or snake_clone[0][0] >= GRID_SIZE[0] or snake_clone[0][1] < 0 or snake_clone[0][1] >= GRID_SIZE[1]:
         collision = True
-    if collision == True:
-        gameTotal = gameTotal+1
-        print("game over")
+
     return collision
-            
-#generates a new apple            
-def makeApple():
-    global apple
-    apple = (random.randint(0, GRID_SIZE[0]-1), random.randint(0, GRID_SIZE[1]-1))     
-    for x in snake:
-        if apple == x:
-            makeApple()
-            return
-
-    agent.SnakeAfterFood.append(snake)
-    agent.AppleList.append(apple)
-
-
-
-
-
-
-
+      
 #has eaten an apple and gets score
-def hasEaten(snake_copy):
+def hasEaten(snake_copy1):
+    snake_copy = snake_copy1.copy()
     global snake, apple, tail, score, stepCount
     if snake_copy == None:
         if snake[0] == apple:
             snake.append(tail)
-            renderSnake(tail[0], tail[1], False)
             if len(snake) == GRID_SIZE[0]*GRID_SIZE[1]:
                 print("you won")
             else:
@@ -200,132 +77,499 @@ def hasEaten(snake_copy):
         else:
             return False
             
+# 20 sewcs second 2000
+class player: 
+    def __init__(self, agentType=None, averageScore=0, name=None):
 
+        # self.plotThread = threading.Thread(
+        #     target=self.plotWorker,
+        #     daemon=True
+        # )
+        # self.plotThread.start()
+        self.agentType = agentType
+        self.averageScore = averageScore
+        self.finalScoreList = []
+        self.totalGames = 0
+        self.GameHistory = []
+        self.Name = name
 
-#initialize to starting state
-def start():
-    global tail, snake, apple, score, direction, plot, stepCount, reset
+        self.df = pd.DataFrame()
 
+        self.snakeHistory = []
+        self.appleHistory = []  # Stores apple at target time step
+        self.stepsSinceLastApple = []
+        self.scoreHistory = []
+        self.stepCount = 0
+        self.directionHistory = []
+        self.foodDistance = []
+        self.SnakeAfterFood = []  # Stores the snake when it last ate
+        self.AppleList = []  # Stores apple each time it is generated
+        EPSILON = 0.3
+        self.gameTotal = 0
+        self.FinalScore = 0  # Stores apple each time it is generated
 
-    canvas.delete("all")
-    window.update()
-    snake.append((GRID_SIZE[0]/2, GRID_SIZE[1]/2))
-    while(len(snake) != 0):
-        snake.pop()
-    snake.append((GRID_SIZE[0]/2, GRID_SIZE[1]/2))
-    tail = snake[-1]
-    score = 0
-    direction = (0,1)
-    makeApple()
-    agent.addStats(snake, apple, stepCount, score, direction)
-    snake = [(GRID_SIZE[0] / 2, GRID_SIZE[1] / 2)]
-    tail = snake[-1]
-    score = 0
-    direction = (0, 1)
-    stepCount = 0
-    reset = False # when start game is presssed finishes reset. 
+        #fun test
+        # self.fig, self.ax = plt.subplots()
+        self.fig, self.ax = plt.subplots(figsize=(3, 2), dpi=80)
+        (self.line,) = self.ax.plot([], [], label="Score")
 
+        # 3. Setup static labels once
+        self.ax.set_title("Score")
+        self.ax.set_xlabel("Game")
+        self.ax.set_ylabel("Score")
+        self.norm = "l1"
+        # plt.show(block=False)
 
     
-    # plot = agent.gameOver() #returns the plot object so that the gui doesn't have a null object for the plot. might break stuff?
-
-
-#game loop
-def run(first):
-    global state, x, y, snake, apple, score, gameOver, direction, stepCount, plot, reset
-    # global 
-    if(first):
-        start()
-        first = False
-    while(1):
-        getDirection("up")
-        agent.addStats(snake, apple, stepCount, score, direction)
-        resetSkip = False
-        #spinning lock (inefficient, but doesn't matter)
-        i = 0
-        while reset:
-            # print("waiting for start command")
-            resetSkip = True
-            i += 1
-            # this is there for multi threading.
-            #otherwise the loop hogs the gui update thread (SO COOL)
-            if i == 1000:
-                break
-    
-        if(state == False and resetSkip == False):
-            moveSnake(None, None) #render part done here
-            stepCount, score = hasEaten(None) #eats apple gets score
-            gameOver = collisionCheck(None)
-            window.update_idletasks()
-            state = True
-        if state == True and resetSkip == False:
-            state = False
-        label.config(text=f"Score: {score} game total:{gameTotal}")
-
-        #game over loop wait for reset of game
-        while gameOver == True and resetSkip == False:
-            if(gameTotal <EPOCHS):
-                plot = agent.gameOver() #makes data frame of the player stats of the round
-                start()
-                gameOver = False
-            window.update()
+    def addStats(self, snake, apple, stepCount, score, direction):
+        # global df, snakeHistory, appleHistory, stepsSinceLastApple, score, stepCount, directionHistory, direction, snake, apple 
+        self.snakeHistory.append(snake)
+        self.appleHistory.append(apple)
+        self.stepsSinceLastApple.append(stepCount)
+        self.scoreHistory.append(score)
+        self.directionHistory.append(direction)
+        self.foodDistance.append(abs(snake[0][0]-apple[0]) + abs(snake[0][1]-apple[1]))
         
-            if(gameOver == False):
-                break
+    def resetPlayer(self):
+        self.snakeHistory.clear()
+        self.appleHistory.clear()
+        self.stepsSinceLastApple.clear()
+        self.scoreHistory.clear()
+        self.directionHistory.clear()
+        self.foodDistance.clear()
+
+
         
-        if  resetSkip and not reset:
-            start()
-            resetSkip = False
+
+    def getDistance(self,direction):
+        apple = self.appleHistory[-1]
+        snake = self.snakeHistory[-1][0]        
+        snake = (snake[0]+direction[0], snake[1]+direction[1])
+        # return abs(abs(snake[0]-apple[0])**2 + abs(snake[1]-apple[1])**2)
+        if self.norm == "l1":
+            return abs(abs(snake[0] - apple[0]) +  abs(snake[1] - apple[1]))
+        elif self.norm == "l2":
+            return abs(abs(snake[0]-apple[0])**2 + abs(snake[1]-apple[1])**2)
+        else:
+            return max(abs(snake[0] - apple[0]), abs(snake[1] - apple[1]))
+
+
+    def getDirection(self):
+        # if(len(self.directionHistory) == 0):
+        #     return (0,1)
+        if not self.snakeHistory or not self.snakeHistory[-1]:
+            return (0, 1)
+
+        snake = self.snakeHistory[-1]
+        direction = self.directionHistory[-1]
+        inverseDir = (direction[0]*-1,direction[1]*-1)
+        options = []
+        InverseCase = True
+        directionList = []#[(0,1), (0,-1), (1,0), (-1,0)]
+        if(inverseDir != (0,1)):
+            snake_copy = moveSnake(snake, (0,1))
+            if(not collisionCheck(snake_copy)):
+                options.append(self.getDistance((0,1)))
+                directionList.append((0,1))
+        if(inverseDir != (0,-1)):
+            snake_copy = moveSnake(snake, (0,-1))
+            if(not collisionCheck(snake_copy)):
+                options.append(self.getDistance((0,-1)))
+                directionList.append((0,-1))
+        if(inverseDir != (1,0)):
+            snake_copy = moveSnake(snake, (1,0))
+            if(not collisionCheck(snake_copy)):
+                options.append(self.getDistance((1,0)))
+                directionList.append((1,0))
+        if(inverseDir != (-1,0)):
+            snake_copy = moveSnake(snake, (-1,0))
+            if(not collisionCheck(snake_copy)):
+                options.append(self.getDistance((-1,0)))
+                directionList.append((-1,0))
+
+
+           # consider right and left  IE
+        
+        min = 99999999999999
+        for x,y in zip(options, directionList):
+            if min> x:
+                min = x
+                direction = y
+        if(len(options) == 0):
+            return (0,1)
+        return direction
+
+    def makePlot(self):
+        games = list(range(1, len(self.finalScoreList) + 1))
+
+        self.line.set_xdata(games)
+        self.line.set_ydata(self.finalScoreList)
+
+        self.ax.relim()
+        self.ax.autoscale_view()
+
+        self.fig.canvas.draw_idle()
+
+        return self.fig
+
+    def gameOver(self):
+        #make a plot of progress
+        #print total scores
+        #reset everything
+
+        #what types of plots:
+            # line plot
+            # histogram of the scores
+            # matplotlib.pyplot.plot(*args, scalex=True, scaley=True, data=None, **kwargs)[source]
+        # 12.5 seconds with just this if
+        if(len(self.scoreHistory) != 0):
+            self.finalScoreList.append(self.scoreHistory[-1])
+
+        # 
+        self.df = pd.DataFrame(
+                            {
+                                "snake": self.snakeHistory,
+                                "apple": self.appleHistory,
+                                "stepsSinceLastApple": self.stepsSinceLastApple,
+                                "score": self.scoreHistory,
+                                "direction": self.directionHistory
+                            }
+                        )
+        
+        self.GameHistory.append(self.df)
+       
+        self.df = pd.DataFrame()
+        self.gameTotal = self.gameTotal+1
+        self.FinalScore = 0 #set final score to 0. 
+
+        # self.resetPlayer()#might cause major bug later
+        if len(self.scoreHistory) !=0:
+            if self.gameTotal % 10 == 0:
+            # threading.Thread(target=self.makePlot).start()
+                self.makePlot()
+            # self.makePlot()
+        # self.resetPlayer()#resets the player at the end of the game new function might be needed here
+        # else:
+            # self.fig
+
+        self.resetPlayer()
+
+        # return self.makePlot()
+        
+        # pass
+
+        # second 2000 = 30 seconds
+        
+
+
+
+
+
+
+#move all player stats into the player object
+# first 100 games = 2.6 seconds
+# 200 = 5.5-5 secondds ish
+# 300 = 8 seconds
+# 400 = 11 seconds
+# 500 = 15 seconds
+# 600 = 21 seconds
+# 700 = 26 seconds
+# 800 = 33 seconds
+# 900 = 40 seconds
+# 1000 = 46 seconds
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# #this will be renamed to assist with the player agent. 
+# #through inheretence, the player object type will be modified to deal with new algorithms. 
+# #the inhereted class will be an algorithm object which is going to be a player atruibute
+# import threading
+# import multiprocessing
+# import pandas as pd
+# import matplotlib.pyplot as plt
+# import tkinter as tk
+# from tkinter import ttk
+# from tkinter import * 
+# from matplotlib.figure import Figure
+# from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg, 
+#                                                NavigationToolbar2Tk)
+# root = tk.Tk()
+# #maybe make an object called a game to store the local game stats. 
+
+# # set environment constants
+# GRID_SIZE = (50,50)
+# RESOLUTION = (600,600)
+# SQUARE_SIZE = (RESOLUTION[0]/(GRID_SIZE[0]),RESOLUTION[1]/(GRID_SIZE[1])) #body seg size
+# SPEED = 100
+# EPOCHS = 100
+# EPSILON = 1
+# GAMMA = 0
+
+
+# #modes the snake in most recent direction
+# def moveSnake(snake_clone1, dir_clone1):
+#         snake_clone = snake_clone1.copy()
+#         dir_clone = dir_clone1
+
+#         head = snake_clone[0]
+#         tail = snake_clone[-1]
+#         tail = snake_clone[-1]
+#         snake_clone.pop()
+#         snake_clone.insert(0, (head[0]+dir_clone[0], head[1]+dir_clone[1]))
+#         return snake_clone
+
+
+# #this function checks for collisions which would end the game  
+# def collisionCheck(snake_clone1):
+#     snake_clone = snake_clone1.copy()
+#     global snake
+#     if(snake_clone == None):
+#         snake_clone = snake
+#     collision = False
+#     for index, x in enumerate(snake_clone):
+#         if index != 0:
+#             if snake_clone[0] == x:
+#                 collision = True
+#     if snake_clone[0][0] < 0 or snake_clone[0][0] >= GRID_SIZE[0] or snake_clone[0][1] < 0 or snake_clone[0][1] >= GRID_SIZE[1]:
+#         collision = True
+
+#     return collision
+      
+# #has eaten an apple and gets score
+# def hasEaten(snake_copy1):
+#     snake_copy = snake_copy1.copy()
+#     global snake, apple, tail, score, stepCount
+#     if snake_copy == None:
+#         if snake[0] == apple:
+#             snake.append(tail)
+#             if len(snake) == GRID_SIZE[0]*GRID_SIZE[1]:
+#                 print("you won")
+#             else:
+#                 # makeApple()
+#                 score = score+10 
+#                 stepCount = 0
+#         else:
+#             stepCount = stepCount+1
+#             # renderSnake(tail[0],tail[1], True)
+#         return stepCount, score
+#     else:
+#         if snake_copy[0] == apple:
+#             return True
+#         else:
+#             return False
+            
+
+
+
+# class game:
+#     def __init__(self, agentType=None, averageScore=0, name=None):
+#         self.agentType = agentType
+#         self.averageScore = averageScore
+#         self.finalScoreList = []
+#         self.totalGames = 0
+#         self.GameHistory = []
+#         self.Name = name
+#         self.df = pd.DataFrame()
+#         self.snakeHistory = []
+#         self.appleHistory = []  # Stores apple at target time step
+#         self.stepsSinceLastApple = []
+#         self.scoreHistory = []
+#         self.stepCount = 0
+#         self.directionHistory = []
+#         self.foodDistance = []
+#         self.SnakeAfterFood = []  # Stores the snake when it last ate
+#         self.AppleList = []  # Stores apple each time it is generated
+
+
+
+
+        
+
+# class player: 
+#     def __init__(self, agentType=None, averageScore=0, name=None):
+#         games = []# list that stores the history of every game
+#         currentGame = game()
+#         EPSILON = 0.3
+#         self.gameTotal = 0
+#         self.FinalScore = 0  # Stores apple each time it is generated
+
+#         #fun test
+#         # self.fig, self.ax = plt.subplots()
+#         self.fig, self.ax = plt.subplots(figsize=(3, 2), dpi=80)
+#         (self.line,) = self.ax.plot([], [], label="Score")
+
+#         # 3. Setup static labels once
+#         self.ax.set_title("Score")
+#         self.ax.set_xlabel("Game")
+#         self.ax.set_ylabel("Score")
+#         self.norm = "l1"
+#         # plt.show(block=False)
+
     
+#     def addStats(self, snake, apple, stepCount, score, direction):
+#         # global df, snakeHistory, appleHistory, stepsSinceLastApple, score, stepCount, directionHistory, direction, snake, apple 
+#         self.gameList[-1].snakeHistory.append(snake)
+#         self.gameList[-1].appleHistory.append(apple)
+#         self.gameList[-1].stepsSinceLastApple.append(stepCount)
+#         self.gameList[-1].scoreHistory.append(score)
+#         self.gameList[-1].directionHistory.append(direction)
+#         self.gameList[-1].foodDistance.append(abs(snake[0][0]-apple[0]) + abs(snake[0][1]-apple[1]))
+        
+#     def resetPlayer(self):
+#         self.gameList.clear()
+#         # self.snakeHistory.clear()
+#         # self.appleHistory.clear()
+#         # self.stepsSinceLastApple.clear()
+#         # self.scoreHistory.clear()
+#         # self.directionHistory.clear()
+#         # self.foodDistance.clear()
 
 
-#resets training and everything back to its original state. 
-def reset():
-    global GRID_SIZE, RESOLUTION, SQUARE_SIZE, SPEED, reset, score, direction, gamesPlayed, gameTotal, show, window, label, canvas, snake, tail, apple
-    # GRID_SIZE = (50,50)
-    # RESOLUTION = (600,600)
-    # SQUARE_SIZE = (RESOLUTION[0]/(GRID_SIZE[0]),RESOLUTION[1]/(GRID_SIZE[1])) #body seg size
-    SPEED = 100 
-    gameTotal = 0
-    score = 0
-    # # while(len(snake) != 0):
-    # #     snake.pop()
-    # # snake = [(GRID_SIZE[0]/2, GRID_SIZE[1]/2)]
-    # # canvas.pack()
-    # # window.update()
+        
+#     #uses game object
+#     def getDistance(self,direction):
+#         apple = self.gameList[-1].appleHistory[-1]
+#         snake = self.gameList[-1].snakeHistory[-1][0]        
+#         snake = (snake[0]+direction[0], snake[1]+direction[1])
 
-    # #game controller (stores current vars agent stores curr + past vars)
-    # # tail = snake[-1]
-    # # apple = ()
-    # # direction = (0,1)
-    # score = 0
-    # gamesPlayed = 0
-    reset = True
-    agent.resetPlayer() #this was a big redundancy headache i neeed to fix
+#         # return abs(abs(snake[0]-apple[0])**2 + abs(snake[1]-apple[1])**2)
+#         if self.norm == "l1":
+#             return abs(abs(snake[0] - apple[0]) +  abs(snake[1] - apple[1]))
+#         elif self.norm == "l2":
+#             return abs(abs(snake[0]-apple[0])**2 + abs(snake[1]-apple[1])**2)
+#         else:
+#             return max(abs(snake[0] - apple[0]), abs(snake[1] - apple[1]))
 
+#     #uses game object
+#     def getDirection(self):
+#         # if(len(self.directionHistory) == 0):
+#         #     return (0,1)
+#         if not self.gameList[-1].snakeHistory or not self.gameList[-1].snakeHistory[-1]:
+#             return (0, 1)
 
-
-# #AI generated code. have to overhaul gui 
-# def runSnakeGame(gameIndex, snakeHistory, appleHistory, scoreHistory, step=0):
-#     if step >= len(snakeHistory):
-#         return
-#     # Get the recorded game state
-#     snake_state = snakeHistory[step]
-#     apple_state = appleHistory[step]
-#     score = scoreHistory[step]
-
-#     # Render this timestep
-#     renderSnake(snake_state, apple_state)
-
-#     # Update score label
-#     label.config(text=f"Score: {score} Game: {gameIndex}")
-
-#     # Schedule the next frame
-#     window.after(100, lambda: runSnakeGame(
-#         gameIndex, snakeHistory, appleHistory, scoreHistory, step + 1
-#     ))
+#         snake = self.gameList[-1].snakeHistory[-1]
+#         direction = self.gameList[-1].directionHistory[-1]
 
 
-window.mainloop()
+        
+#         inverseDir = (direction[0]*-1,direction[1]*-1)
+#         options = []
+#         InverseCase = True
+#         directionList = []#[(0,1), (0,-1), (1,0), (-1,0)]
+#         if(inverseDir != (0,1)):
+#             snake_copy = moveSnake(snake, (0,1))
+#             if(not collisionCheck(snake_copy)):
+#                 options.append(self.getDistance((0,1)))
+#                 directionList.append((0,1))
+#         if(inverseDir != (0,-1)):
+#             snake_copy = moveSnake(snake, (0,-1))
+#             if(not collisionCheck(snake_copy)):
+#                 options.append(self.getDistance((0,-1)))
+#                 directionList.append((0,-1))
+#         if(inverseDir != (1,0)):
+#             snake_copy = moveSnake(snake, (1,0))
+#             if(not collisionCheck(snake_copy)):
+#                 options.append(self.getDistance((1,0)))
+#                 directionList.append((1,0))
+#         if(inverseDir != (-1,0)):
+#             snake_copy = moveSnake(snake, (-1,0))
+#             if(not collisionCheck(snake_copy)):
+#                 options.append(self.getDistance((-1,0)))
+#                 directionList.append((-1,0))
 
-stepCount = 0
+
+#            # consider right and left  IE
+        
+#         min = 99999999999999
+#         for x,y in zip(options, directionList):
+#             if min> x:
+#                 min = x
+#                 direction = y
+#         if(len(options) == 0):
+#             return (0,1)
+#         return direction
+
+
+#     def makePlot(self):
+#         games = list(range(1, len(self.gameList[-1].finalScoreList) + 1))
+
+#         self.line.set_xdata(games)
+#         self.line.set_ydata(self.finalScoreList)
+
+#         self.ax.relim()
+#         self.ax.autoscale_view()
+
+#         self.fig.canvas.draw_idle()
+
+#         return self.fig
+
+#     def gameOver(self):
+#         #make a plot of progress
+#         #print total scores
+#         #reset everything
+
+#         #what types of plots:
+#             # line plot
+#             # histogram of the scores
+#             # matplotlib.pyplot.plot(*args, scalex=True, scaley=True, data=None, **kwargs)[source]
+#         if(len(self.scoreHistory) != 0):
+#             self.finalScoreList.append(self.scoreHistory[-1])
+        
+#         self.df = pd.DataFrame(
+#                             {
+#                                 "snake": self.snakeHistory,
+#                                 "apple": self.appleHistory,
+#                                 "stepsSinceLastApple": self.stepsSinceLastApple,
+#                                 "score": self.scoreHistory,
+#                                 "direction": self.directionHistory
+#                             }
+#                         )
+#         self.GameHistory.append(self.df)
+#         self.df = pd.DataFrame()
+#         self.gameTotal = self.gameTotal+1
+#         self.FinalScore = 0 #set final score to 0. 
+
+
+#         if len(self.scoreHistory) !=0:
+#             return self.makePlot()
+#         else:
+#             return self.fig
+#         # return self.makePlot()
+
+
+
+
+
+
+
+# #move all player stats into the player object
+# # game total
+# # first 100 games = 2.6 seconds
+# # 200 = 5.5-5 secondds ish
+# # 300 = 8 seconds
+# # 400 = 11 seconds
+# # 500 = 15 seconds
+# # 600 = 21 seconds
+# # 700 = 26 seconds
+# # 800 = 33 seconds
+# # 900 = 40 seconds
+# # 1000 = 46 seconds
+
+
+
+#with game over function removed:
+# 1000 games = 12 seconds = 1.2 seconds per 100
+# 12.5
