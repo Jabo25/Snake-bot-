@@ -7,8 +7,7 @@ root = tk.Tk()
 root.title("Complete Your Profile")
 root.resizable(False, False)
 
-
-
+# https://github.com/ua-ista-455/applied-nlp-fa26-pre-trained-lm-jabo25.git
 from tkinter import * 
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg, NavigationToolbar2Tk)
@@ -61,6 +60,14 @@ setScreenSize = False
 
 
 
+def start_training():
+    training_thread = threading.Thread(
+        target=sn.run,
+        args=(True,)
+    )
+
+    training_thread.start()
+
 def setScreenSize():
     global startedGameLoop
     if(grid_size.get() == "Small"):
@@ -85,7 +92,7 @@ def setScreenSize():
     # gameOver = False
     print(startedGameLoop, "not started")
     if(not startedGameLoop):
-        sn.run(True)
+        start_training()
         startedGameLoop = True
     else:
         sn.start()
@@ -194,6 +201,56 @@ stop.grid(row=0, column=2, padx=(65,10), pady=5)
 start = ttk.Button(button_frame, text="Start Training", command=setScreenSize)
 start.grid(row=0, column=1, padx=3, pady=5)
 
+# showGame = ttk.Button(button_frame, text="show")
+# def replay_game(canvas):
+#     """Renders the last recorded game state to the provided Tkinter Canvas."""
+#     canvas.delete("all")  # Clear previous frame
+
+#     # Access your stored history
+#     snake_hist = sn.agent.snakeHistory
+#     apple_hist = sn.agent.appleHistory
+#     score_hist = sn.agent.scoreHistory
+
+#     if not snake_hist or not apple_hist:
+#         canvas.create_text(
+#             canvas.winfo_width() // 2,
+#             canvas.winfo_height() // 2,
+#             text="No game history to replay",
+#             font=("Arial", 12),
+#             fill="white"
+#         )
+#         return
+
+#     # Render the final state (instant)
+#     final_snake = snake_hist[-1]
+#     final_apple = apple_hist[-1]
+#     final_score = score_hist[-1] if score_hist else 0
+
+#     # Draw Apple
+#     ax, ay = final_apple
+#     size = sn.SQUARE_SIZE[0]
+#     canvas.create_rectangle(
+#         ax * size, ay * size,
+#         (ax + 1) * size, (ay + 1) * size,
+#         fill="#FF0000", outline="black"
+#     )
+
+#     # Draw Snake
+#     for seg in final_snake:
+#         sx, sy = seg
+#         canvas.create_rectangle(
+#             sx * size, sy * size,
+#             (sx + 1) * size, (sy + 1) * size,
+#             fill="#00FF00", outline="black"
+#         )
+
+#     # Update score label (if it exists in sn module)
+#     if hasattr(sn, 'label'):
+#         sn.label.config(text=f"Score: {final_score}")
+
+
+
+# showGame = ttk.Button(button_frame, text="show training", command=button)
 
 # reset = ttk.Button(root, text="Reset", command = sn.reset)
 # reset.grid(row=7, column=2, padx=1, pady=5, sticky=tk.W)
@@ -211,17 +268,201 @@ start.grid(row=0, column=1, padx=3, pady=5)
 
 
 
-#start training button
-def button():
-    setattr(sn, "show", not sn.show)
-    if(not sn.show):
-        showGame.config(text="Show Gameplay")
-    else:
-        showGame.config(text="Hide Game Play")
+def renderSnake(x,y, remove):
+    print(x,y)
+    # global  sn.color, canvas_rects, apple_rect_id, apple
+    apple = sn.apple
 
-showGame = ttk.Button(button_frame, text="Hide Game Play", command=button)
-showGame.grid(row=0, column=3, padx=(80, 30), pady=5)    
-showGame = ttk.Button(button_frame, text="Hide Game Play", command=button)
+    #evaluate for render glitch with apple generation removal. after eaten
+
+    
+   #add squares back
+    pixel_x = sn.SQUARE_SIZE[0] * x
+    pixel_y = sn.SQUARE_SIZE[1] * y
+
+    if not remove:  #EATEN keep square
+        rect_id = sn.canvas.create_rectangle(
+            pixel_x,
+            pixel_y,
+            pixel_x + sn.SQUARE_SIZE[0],
+            pixel_y + sn.SQUARE_SIZE[1],
+            fill=sn.SNAKE_COLOR
+        )
+        sn.canvas_rects[(x, y)] = rect_id
+
+
+        # apple removal
+        pixel_x = sn.SQUARE_SIZE[0] * apple[0]
+        pixel_y = sn.SQUARE_SIZE[1] * apple[1]
+        apple_rect_id = sn.canvas.create_rectangle(
+        pixel_x, pixel_y,
+        pixel_x + sn.SQUARE_SIZE[0], pixel_y + sn.SQUARE_SIZE[1],
+        fill=sn.FOOD_COLOR)
+        rect_id = sn.canvas_rects.pop((apple[0], apple[1]), None)
+
+
+    else:#DIDN'T EAT remove square
+        # pygame.draw.rect(surface, (0,0,0), rect)
+        rect_id = sn.canvas_rects.pop((x, y), None)
+        
+        #make new snake seg
+        sn.canvas.create_rectangle(
+            pixel_x,
+            pixel_y,
+            pixel_x + sn.SQUARE_SIZE[0],
+            pixel_y + sn.SQUARE_SIZE[1],
+            fill=sn.BG_COLOR,
+            outline=sn.BG_COLOR
+        )
+        if rect_id is not None:
+            sn.canvas.delete(rect_id)
+        
+        #make apple
+        if remove:
+                        # apple removal
+            pixel_x = sn.SQUARE_SIZE[0] * apple[0]
+            pixel_y = sn.SQUARE_SIZE[1] * apple[1]
+            apple_rect_id = sn.canvas.create_rectangle(
+            pixel_x, pixel_y,
+            pixel_x + sn.SQUARE_SIZE[0], pixel_y + sn.SQUARE_SIZE[1],
+            fill=sn.FOOD_COLOR)
+            rect_id = sn.canvas_rects.pop((apple[0], apple[1]), None)
+
+
+
+#this function runAnimation was written by AI. 
+# I wrote render snake by hand. It is not worth rewriting 
+# code to render the snake a 3rd time for a potentially temporary rendering system
+def runAnimation(canvas, step=0, snake_state=None):
+    agent = sn.agent
+    frame_count = min(
+        len(agent.snakeHistory),
+        len(agent.appleHistory),
+        len(agent.directionHistory),
+    )
+
+    if frame_count == 0:
+        canvas.delete("all")
+        canvas.create_text(
+            (canvas.winfo_width() or 600) / 2,
+            (canvas.winfo_height() or 600) / 2,
+            text="No game history to replay",
+            fill="white",
+        )
+        return
+
+    if step >= frame_count:
+        canvas.create_text(
+            (canvas.winfo_width() or 600) / 2,
+            (canvas.winfo_height() or 600) / 2,
+            text="Replay Complete",
+            fill="white",
+            font=("Arial", 12),
+        )
+        return
+
+    if snake_state is None:
+        current_snake = [tuple(segment) for segment in agent.snakeHistory[step]]
+    else:
+        current_snake = list(snake_state)
+
+    canvas.delete("all")
+    sn.canvas_rects.clear()
+    size_x, size_y = sn.SQUARE_SIZE
+
+    apple = agent.appleHistory[step]
+    ax, ay = apple
+    sn.apple_rect_id = canvas.create_rectangle(
+        ax * size_x,
+        ay * size_y,
+        (ax + 1) * size_x,
+        (ay + 1) * size_y,
+        fill=sn.FOOD_COLOR,
+    )
+
+    for sx, sy in current_snake:
+        rect_id = canvas.create_rectangle(
+            sx * size_x,
+            sy * size_y,
+            (sx + 1) * size_x,
+            (sy + 1) * size_y,
+            fill=sn.SNAKE_COLOR,
+        )
+        sn.canvas_rects[(sx, sy)] = rect_id
+
+    if step + 1 < frame_count:
+        next_apple = agent.appleHistory[step + 1]
+        apple_changed = next_apple != apple
+        reset = False
+        previous_score = None
+        next_score = None
+
+        if len(agent.scoreHistory) > step + 1:
+            previous_score = agent.scoreHistory[step]
+            next_score = agent.scoreHistory[step + 1]
+            reset = next_score < previous_score or (
+                apple_changed and next_score <= previous_score
+            )
+
+        has_step_counts = len(agent.stepsSinceLastApple) > step + 1
+        if (
+            not reset
+            and has_step_counts
+            and agent.stepsSinceLastApple[step] > 0
+            and agent.stepsSinceLastApple[step + 1] == 0
+            and (next_score is None or next_score <= previous_score)
+        ):
+            reset = True
+
+        duplicate_start = (
+            not apple_changed
+            and previous_score is not None
+            and next_score == previous_score
+            and has_step_counts
+            and agent.stepsSinceLastApple[step] == 0
+            and agent.stepsSinceLastApple[step + 1] == 0
+        )
+
+        if reset:
+            next_snake = [
+                tuple(segment) for segment in agent.snakeHistory[step + 1]
+            ]
+        elif duplicate_start:
+            next_snake = current_snake
+        else:
+            dx, dy = agent.directionHistory[step]
+            next_snake = [
+                (current_snake[0][0] + dx, current_snake[0][1] + dy)
+            ] + current_snake
+            if not apple_changed:
+                next_snake.pop()
+
+        canvas.after(
+            100,
+            lambda s=step + 1, state=next_snake: runAnimation(canvas, s, state),
+        )
+
+
+def on_replay():
+    runAnimation(sn.canvas, step=0, snake_state=None)
+
+
+
+showGame = ttk.Button(button_frame, text="Replay", command=on_replay)
+# showGame = ttk.Button(button_frame, text="show training", command=lambda: runAnimation(sn.canvas))
+showGame.grid(row=0, column=3, padx=(80, 30), pady=5)   
+
+
+# showGame = ttk.Button(button_frame, text="show training", command=button)
+# showGame.grid(row=0, column=3, padx=(80, 30), pady=5) 
+
+
+
+
+
+
+
+# showGame = ttk.Button(button_frame, text="show training", command=button)
 # showGame.grid(row=0, column=3, padx=7, pady=5)
 # showGame = ttk.Button(root, text="Hide Game Play", command = button)
 # showGame.grid(row=7, column=5, columnspan=2, padx=1, pady=5, sticky=tk.W)
@@ -268,3 +509,12 @@ t2 = threading.Thread(target=root.mainloop())
 t2.start()
 
 
+
+
+
+#the plan for this:
+    # have a create new agent button
+    # the new agent button adds an agent onto a list. 
+    # the start training trains that agent. 
+    # and the stats will be handled. 
+    # for a prototype agent, what I need to do is Um,,,,
