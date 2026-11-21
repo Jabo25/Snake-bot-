@@ -1,3 +1,6 @@
+
+
+
 import threading
 import multiprocessing
 
@@ -123,9 +126,6 @@ norm = ttk.Combobox(root, values=["L1", "L2", "Infinity"], state="readonly")
 norm.grid(row=2, column=1, padx=1, pady=1, sticky=tk.W)
 norm.set("L2")
 
-
-
-
                                                                         # PARAM ENTRY BOXES
 
 
@@ -161,13 +161,6 @@ tk.Label(root, text="Epsilon:", ).grid(row=6, column=0, padx=5, pady=3, sticky=t
 Speed = tk.Scale(root, from_=0, to=100, orient = tk.HORIZONTAL)
 Speed.grid(row=7, column=1, padx=5, pady=3, sticky=tk.W)
 tk.Label(root, text="Render Speed:", ).grid(row=7, column=0, padx=3, pady=5, sticky=tk.W)
-
-
-
-
-
-
-
 
                                                                 #BOTTOM ROW BUTTONS HERE (ROW 8)
 def updateParams():
@@ -555,7 +548,9 @@ def runAnimation(canvas, step=0, snake_state=None, previous_state=None, reset_fr
 
 
 def on_replay():
-    runAnimation(sn.canvas, step=0)
+    
+    # runAnimation(sn.canvas, step=0)
+    pass
 
 
 
@@ -605,19 +600,22 @@ def plot():
     plot_frame.grid(row=0, column=4, rowspan=7, padx=20, pady=10)
 
 
-    return plot_frame
+    # return plot_frame
+    # pass
 
 
 
-plot()
-if(sn.gameOver):
-    # plot_canvas.draw_idle()
+if sn.gameTotal == 0 :
+    print("vajina") 
     plot()
+# if(sn.gameOver):
+    # plot_canvas.draw_idle()
+    # plot()
 
 
-
-t2 = threading.Thread(target=root.mainloop())
-t2.start()
+root.mainloop()
+# t2 = threading.Thread(target=root.mainloop())
+# t2.start() 
 
 
 
