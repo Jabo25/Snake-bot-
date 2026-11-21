@@ -60,51 +60,51 @@ show = False
 
 
 #render the snake. Will be replaced with render every 1000 turns
-def renderSnake(x,y, remove):
+# def renderSnake(x,y, remove):
     
-    global  color, canvas_rects, apple_rect_id, apple
+#     global  color, canvas_rects, apple_rect_id, apple
 
-    if apple_rect_id is not None:
-        canvas.delete(apple_rect_id)
-    pixel_x = SQUARE_SIZE[0] * apple[0]
-    pixel_y = SQUARE_SIZE[1] * apple[1]
-    apple_rect_id = canvas.create_rectangle(
-        pixel_x, pixel_y,
-        pixel_x + SQUARE_SIZE[0], pixel_y + SQUARE_SIZE[1],
-        fill=FOOD_COLOR
-    )
-    pixel_x = SQUARE_SIZE[0] * x
-    pixel_y = SQUARE_SIZE[1] * y
+#     if apple_rect_id is not None:
+#         canvas.delete(apple_rect_id)
+#     pixel_x = SQUARE_SIZE[0] * apple[0]
+#     pixel_y = SQUARE_SIZE[1] * apple[1]
+#     apple_rect_id = canvas.create_rectangle(
+#         pixel_x, pixel_y,
+#         pixel_x + SQUARE_SIZE[0], pixel_y + SQUARE_SIZE[1],
+#         fill=FOOD_COLOR
+#     )
+#     pixel_x = SQUARE_SIZE[0] * x
+#     pixel_y = SQUARE_SIZE[1] * y
 
-    if not remove:
-        rect_id = canvas.create_rectangle(
-            pixel_x,
-            pixel_y,
-            pixel_x + SQUARE_SIZE[0],
-            pixel_y + SQUARE_SIZE[1],
-            fill=SNAKE_COLOR
-        )
-        canvas_rects[(x, y)] = rect_id
-        # canvas.create_rectangle(
-        #     pixel_x,
-        #     pixel_y,
-        #     pixel_x + SQUARE_SIZE[0],
-        #     pixel_y + SQUARE_SIZE[1],
-        #     fill=SNAKE_COLOR
-        # )
-    else:
-        # pygame.draw.rect(surface, (0,0,0), rect)
-        rect_id = canvas_rects.pop((x, y), None)
-        canvas.create_rectangle(
-            pixel_x,
-            pixel_y,
-            pixel_x + SQUARE_SIZE[0],
-            pixel_y + SQUARE_SIZE[1],
-            fill=BG_COLOR,
-            outline=BG_COLOR
-        )
-        if rect_id is not None:
-            canvas.delete(rect_id)
+#     if not remove:
+#         rect_id = canvas.create_rectangle(
+#             pixel_x,
+#             pixel_y,
+#             pixel_x + SQUARE_SIZE[0],
+#             pixel_y + SQUARE_SIZE[1],
+#             fill=SNAKE_COLOR
+#         )
+#         canvas_rects[(x, y)] = rect_id
+#         # canvas.create_rectangle(
+#         #     pixel_x,
+#         #     pixel_y,
+#         #     pixel_x + SQUARE_SIZE[0],
+#         #     pixel_y + SQUARE_SIZE[1],
+#         #     fill=SNAKE_COLOR
+#         # )
+#     else:
+#         # pygame.draw.rect(surface, (0,0,0), rect)
+#         rect_id = canvas_rects.pop((x, y), None)
+#         canvas.create_rectangle(
+#             pixel_x,
+#             pixel_y,
+#             pixel_x + SQUARE_SIZE[0],
+#             pixel_y + SQUARE_SIZE[1],
+#             fill=BG_COLOR,
+#             outline=BG_COLOR
+#         )
+#         if rect_id is not None:
+#             canvas.delete(rect_id)
 
 
 
@@ -156,7 +156,7 @@ def collisionCheck(snake_clone):
         collision = True
     if collision == True:
         gameTotal = gameTotal+1
-        print("game over")
+        print("game over", gameTotal)
     return collision
             
 #generates a new apple            
@@ -259,7 +259,10 @@ def run(first):
         #game over loop wait for reset of game
         while gameOver == True and resetSkip == False:
             if(gameTotal <EPOCHS):
-                plot = agent.gameOver() #makes data frame of the player stats of the round
+                # plot = i have no idea why this isn't nbeing used...old code but handled in gui/demo.py which is better
+                agent.gameOver() #makes data frame of the player stats of the round
+                # agent.resetPlayer()#resets the player at the end of the game new function might be needed here
+
                 start()
                 gameOver = False
             # window.update()
