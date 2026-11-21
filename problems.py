@@ -17,7 +17,7 @@ import problems as st
 GRID_SIZE = (50,50)
 RESOLUTION = (600,600)
 SQUARE_SIZE = (RESOLUTION[0]/(GRID_SIZE[0]),RESOLUTION[1]/(GRID_SIZE[1])) #body seg size
-SPEED = 100
+SPEED = 0
 EPOCHS = 100
 EPSILON = 1
 GAMMA = 0
@@ -54,6 +54,59 @@ gameOver = False
 #extra statistics for the snake
 agent = st.player()#make player object
 canvas_rects = {}
+apple_rect_id = None
+
+
+
+
+#render the snake. Will be replaced with render every 1000 turns
+def renderSnake(x,y, remove):
+    
+    global  color, canvas_rects, apple_rect_id, apple
+
+    if apple_rect_id is not None:
+        canvas.delete(apple_rect_id)
+    pixel_x = SQUARE_SIZE[0] * apple[0]
+    pixel_y = SQUARE_SIZE[1] * apple[1]
+    apple_rect_id = canvas.create_rectangle(
+        pixel_x, pixel_y,
+        pixel_x + SQUARE_SIZE[0], pixel_y + SQUARE_SIZE[1],
+        fill=FOOD_COLOR
+    )
+    pixel_x = SQUARE_SIZE[0] * x
+    pixel_y = SQUARE_SIZE[1] * y
+
+    if not remove:
+        rect_id = canvas.create_rectangle(
+            pixel_x,
+            pixel_y,
+            pixel_x + SQUARE_SIZE[0],
+            pixel_y + SQUARE_SIZE[1],
+            fill=SNAKE_COLOR
+        )
+        canvas_rects[(x, y)] = rect_id
+        # canvas.create_rectangle(
+        #     pixel_x,
+        #     pixel_y,
+        #     pixel_x + SQUARE_SIZE[0],
+        #     pixel_y + SQUARE_SIZE[1],
+        #     fill=SNAKE_COLOR
+        # )
+    else:
+        # pygame.draw.rect(surface, (0,0,0), rect)
+        rect_id = canvas_rects.pop((x, y), None)
+        canvas.create_rectangle(
+            pixel_x,
+            pixel_y,
+            pixel_x + SQUARE_SIZE[0],
+            pixel_y + SQUARE_SIZE[1],
+            fill=BG_COLOR,
+            outline=BG_COLOR
+        )
+        if rect_id is not None:
+            canvas.delete(rect_id)
+
+
 
 #takes keyboard inputa and moves the snake
 def getDirection(event):
@@ -118,59 +171,10 @@ def makeApple():
     agent.SnakeAfterFood.append(snake)
     agent.AppleList.append(apple)
 
-    pixel_x = SQUARE_SIZE[0] * apple[0]
-    pixel_y = SQUARE_SIZE[1] * apple[1]
-
-    if(show):
-        canvas.create_rectangle(
-            pixel_x,
-            pixel_y,
-            pixel_x + SQUARE_SIZE[0],
-            pixel_y + SQUARE_SIZE[1],
-            fill=FOOD_COLOR
-        )
 
 
-def renderSnake(x,y, remove):
-    
-    global  color, canvas_rects
-    pixel_x = SQUARE_SIZE[0] * x
-    pixel_y = SQUARE_SIZE[1] * y
 
-    if not remove:
-        rect_id = canvas.create_rectangle(
-            pixel_x,
-            pixel_y,
-            pixel_x + SQUARE_SIZE[0],
-            pixel_y + SQUARE_SIZE[1],
-            fill=SNAKE_COLOR
-        )
-        canvas_rects[(x, y)] = rect_id
-        # canvas.create_rectangle(
-        #     pixel_x,
-        #     pixel_y,
-        #     pixel_x + SQUARE_SIZE[0],
-        #     pixel_y + SQUARE_SIZE[1],
-        #     fill=SNAKE_COLOR
-        # )
-    else:
-        # pygame.draw.rect(surface, (0,0,0), rect)
-        rect_id = canvas_rects.pop((x, y), None)
-        canvas.create_rectangle(
-            pixel_x,
-            pixel_y,
-            pixel_x + SQUARE_SIZE[0],
-            pixel_y + SQUARE_SIZE[1],
-            fill=BG_COLOR,
-            outline=BG_COLOR
-        )
-        if rect_id is not None:
-            canvas.delete(rect_id)
-    
-    # rgb = pygame.image.tobytes(surface, "RGB")# this creates 
-    # image = Image.frombytes("RGB", surface.get_size(), rgb)
-    # tk_image = ImageTk.PhotoImage(image)
-    # image_callback(tk_image)
+
 
 
 #has eaten an apple and gets score
@@ -198,6 +202,7 @@ def hasEaten(snake_copy):
             
 
 
+#initialize to starting state
 def start():
     global tail, snake, apple, score, direction, plot, stepCount, reset
 
@@ -225,55 +230,53 @@ def start():
     # plot = agent.gameOver() #returns the plot object so that the gui doesn't have a null object for the plot. might break stuff?
 
 
+#game loop
 def run(first):
     global state, x, y, snake, apple, score, gameOver, direction, stepCount, plot, reset
     # global 
     if(first):
         start()
         first = False
-    
-    getDirection("up")
-    agent.addStats(snake, apple, stepCount, score, direction)
-    resetSkip = False
-    #spinning lock (inefficient, but doesn't matter)
-    i = 0
-    while reset:
-        # print("waiting for start command")
-        resetSkip = True
-        i += 1
-        # this is there for multi threading.
-        #otherwise the loop hogs the gui update thread (SO COOL)
-        if i == 1000:
-            break
-    
-
-
-    if(state == False and resetSkip == False):
-        moveSnake(None, None) #render part done here
-        stepCount, score = hasEaten(None) #eats apple gets score
-        gameOver = collisionCheck(None)
-        window.update_idletasks()
-        state = True
-    if state == True and resetSkip == False:
-        state = False
-    label.config(text=f"Score: {score} game total:{gameTotal}")
-
-    #game over loop wait for reset of game
-    while gameOver == True and resetSkip == False:
-        if(gameTotal <EPOCHS):
-            plot = agent.gameOver() #makes data frame of the player stats of the round
-            start()
-            gameOver = False
-        window.update()
-    
-        if(gameOver == False):
-            break
-    
-    if  resetSkip and not reset:
-        start()
+    while(1):
+        getDirection("up")
+        agent.addStats(snake, apple, stepCount, score, direction)
         resetSkip = False
+        #spinning lock (inefficient, but doesn't matter)
+        i = 0
+        while reset:
+            # print("waiting for start command")
+            resetSkip = True
+            i += 1
+            # this is there for multi threading.
+            #otherwise the loop hogs the gui update thread (SO COOL)
+            if i == 1000:
+                break
     
-    window.after(SPEED, lambda: run(False))
+        if(state == False and resetSkip == False):
+            moveSnake(None, None) #render part done here
+            stepCount, score = hasEaten(None) #eats apple gets score
+            gameOver = collisionCheck(None)
+            window.update_idletasks()
+            state = True
+        if state == True and resetSkip == False:
+            state = False
+        label.config(text=f"Score: {score} game total:{gameTotal}")
+
+        #game over loop wait for reset of game
+        while gameOver == True and resetSkip == False:
+            if(gameTotal <EPOCHS):
+                plot = agent.gameOver() #makes data frame of the player stats of the round
+                start()
+                gameOver = False
+            window.update()
+        
+            if(gameOver == False):
+                break
+        
+        if  resetSkip and not reset:
+            start()
+            resetSkip = False
+    
 
 
 #resets training and everything back to its original state. 
@@ -299,6 +302,30 @@ def reset():
     # gamesPlayed = 0
     reset = True
     agent.resetPlayer() #this was a big redundancy headache i neeed to fix
+
+
+
+# #AI generated code. have to overhaul gui 
+# def runSnakeGame(gameIndex, snakeHistory, appleHistory, scoreHistory, step=0):
+#     if step >= len(snakeHistory):
+#         return
+#     # Get the recorded game state
+#     snake_state = snakeHistory[step]
+#     apple_state = appleHistory[step]
+#     score = scoreHistory[step]
+
+#     # Render this timestep
+#     renderSnake(snake_state, apple_state)
+
+#     # Update score label
+#     label.config(text=f"Score: {score} Game: {gameIndex}")
+
+#     # Schedule the next frame
+#     window.after(100, lambda: runSnakeGame(
+#         gameIndex, snakeHistory, appleHistory, scoreHistory, step + 1
+#     ))
+
+
 window.mainloop()
 
 stepCount = 0
