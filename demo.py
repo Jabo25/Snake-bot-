@@ -320,19 +320,22 @@ def renderSnake(x,y, remove):
             pixel_x + sn.SQUARE_SIZE[0], pixel_y + sn.SQUARE_SIZE[1],
             fill=sn.FOOD_COLOR)
             rect_id = sn.canvas_rects.pop((apple[0], apple[1]), None)
+        # root.after(0, lambda: sn.label.config(text=f"Score: {sn.score} game total:{sn.gameTotal}"))
 
 
-
-#this function runAnimation was written by AI. 
-# I wrote render snake by hand. It is not worth rewriting 
-# code to render the snake a 3rd time for a potentially temporary rendering system
-# def runAnimation(canvas, step=0, snake_state=None):
+#runAnimation was coded by AI. I am writing this so prof knows
+#this one uses my render snake function I coded. 
+# The old renderSnake did not use my code
+# I have to reconfigure my entire archetecture of my game to optimize for speed
+# def runAnimation(canvas, step=0, snake_state=None, frame_count=None):
 #     agent = sn.agent
-#     frame_count = min(
-#         len(agent.snakeHistory),
-#         len(agent.appleHistory),
-#         len(agent.directionHistory),
-#     )
+
+#     if frame_count is None:
+#         frame_count = min(
+#             len(agent.snakeHistory),
+#             len(agent.appleHistory),
+#             len(agent.directionHistory),
+#         )
 
 #     if frame_count == 0:
 #         canvas.delete("all")
@@ -355,103 +358,189 @@ def renderSnake(x,y, remove):
 #         return
 
 #     if snake_state is None:
-#         current_snake = [tuple(segment) for segment in agent.snakeHistory[step]]
+#         current_snake = [
+#             tuple(segment) for segment in agent.snakeHistory[step]
+#         ]
 #     else:
 #         current_snake = list(snake_state)
 
 #     canvas.delete("all")
 #     sn.canvas_rects.clear()
-#     size_x, size_y = sn.SQUARE_SIZE
+#     apple_rect_id = None
 
-#     apple = agent.appleHistory[step]
-#     ax, ay = apple
-#     sn.apple_rect_id = canvas.create_rectangle(
-#         ax * size_x,
-#         ay * size_y,
-#         (ax + 1) * size_x,
-#         (ay + 1) * size_y,
-#         fill=sn.FOOD_COLOR,
-#     )
+#     def draw_segment(x, y):
+#         nonlocal apple_rect_id
 
-#     for sx, sy in current_snake:
-#         rect_id = canvas.create_rectangle(
-#             sx * size_x,
-#             sy * size_y,
-#             (sx + 1) * size_x,
-#             (sy + 1) * size_y,
-#             fill=sn.SNAKE_COLOR,
-#         )
-#         sn.canvas_rects[(sx, sy)] = rect_id
+#         if apple_rect_id is not None:
+#             canvas.delete(apple_rect_id)
 
-#     if step + 1 < frame_count:
-#         next_apple = agent.appleHistory[step + 1]
-#         apple_changed = next_apple != apple
-#         reset = False
-#         previous_score = None
-#         next_score = None
+#         before = set(canvas.find_all())
+#         renderSnake(x, y, False)
 
-#         if len(agent.scoreHistory) > step + 1:
-#             previous_score = agent.scoreHistory[step]
-#             next_score = agent.scoreHistory[step + 1]
-#             reset = next_score < previous_score or (
-#                 apple_changed and next_score <= previous_score
+#         for item_id in set(canvas.find_all()) - before:
+#             if (
+#                 canvas.type(item_id) == "rectangle"
+#                 and canvas.itemcget(item_id, "fill") == sn.FOOD_COLOR
+#             ):
+#                 apple_rect_id = item_id
+
+#     saved_apple = sn.apple
+#     sn.apple = agent.appleHistory[step]
+#     try:
+#         # Draw body segments directly (renderSnake only draws head + apple)
+#         for sx, sy in current_snake[1:]:
+#             pixel_x = sn.SQUARE_SIZE[0] * sx
+#             pixel_y = sn.SQUARE_SIZE[1] * sy
+#             canvas.create_rectangle(
+#                 pixel_x, pixel_y,
+#                 pixel_x + sn.SQUARE_SIZE[0], pixel_y + sn.SQUARE_SIZE[1],
+#                 fill=sn.SNAKE_COLOR, outline="black"
 #             )
 
-#         has_step_counts = len(agent.stepsSinceLastApple) > step + 1
-#         if (
-#             not reset
-#             and has_step_counts
-#             and agent.stepsSinceLastApple[step] > 0
-#             and agent.stepsSinceLastApple[step + 1] == 0
-#             and (next_score is None or next_score <= previous_score)
-#         ):
-#             reset = True
+#         # Call renderSnake once for the head (it draws head + apple)
+#         if current_snake:
+#             hx, hy = current_snake[0]
+#             draw_segment(hx, hy)
+#     finally:
+#         sn.apple = saved_apple
 
-#         duplicate_start = (
-#             not apple_changed
-#             and previous_score is not None
-#             and next_score == previous_score
-#             and has_step_counts
-#             and agent.stepsSinceLastApple[step] == 0
-#             and agent.stepsSinceLastApple[step + 1] == 0
-#         )
-
-#         if reset:
-#             next_snake = [
-#                 tuple(segment) for segment in agent.snakeHistory[step + 1]
-#             ]
-#         elif duplicate_start:
-#             next_snake = current_snake
-#         else:
-#             dx, dy = agent.directionHistory[step]
-#             next_snake = [
-#                 (current_snake[0][0] + dx, current_snake[0][1] + dy)
-#             ] + current_snake
-#             if not apple_changed:
-#                 next_snake.pop()
-
+#     if step + 1 >= frame_count:
 #         canvas.after(
 #             100,
-#             lambda s=step + 1, state=next_snake: runAnimation(canvas, s, state),
+#             lambda: canvas.create_text(
+#                 (canvas.winfo_width() or 600) / 2,
+#                 (canvas.winfo_height() or 600) / 2,
+#                 text="Replay Complete",
+#                 fill="white",
+#                 font=("Arial", 12),
+#             ),
+#         )
+#         return
+
+#     next_apple = agent.appleHistory[step + 1]
+#     apple_changed = next_apple != agent.appleHistory[step]
+#     previous_score = None
+#     next_score = None
+#     next_reset = False
+
+#     if len(agent.scoreHistory) > step + 1:
+#         previous_score = agent.scoreHistory[step]
+#         next_score = agent.scoreHistory[step + 1]
+#         next_reset = next_score < previous_score or (
+#             apple_changed and next_score <= previous_score
 #         )
 
+#     has_step_counts = len(agent.stepsSinceLastApple) > step + 1
+#     if (
+#         not next_reset
+#         and has_step_counts
+#         and agent.stepsSinceLastApple[step] > 0
+#         and agent.stepsSinceLastApple[step + 1] == 0
+#         and (next_score is None or next_score <= previous_score)
+#     ):
+#         next_reset = True
 
-# def on_replay():
-#     runAnimation(sn.canvas, step=0, snake_state=None)
+#     duplicate_start = (
+#         not apple_changed
+#         and previous_score is not None
+#         and next_score == previous_score
+#         and has_step_counts
+#         and agent.stepsSinceLastApple[step] == 0
+#         and agent.stepsSinceLastApple[step + 1] == 0
+#     )
 
-#runAnimation was coded by AI. I am writing this so prof knows
-#this one uses my render snake function I coded. 
-# The old renderSnake did not use my code
-# I have to reconfigure my entire archetecture of my game to optimize for speed
-def runAnimation(canvas, step=0, snake_state=None, previous_state=None, reset_frame=False):
+#     dx, dy = agent.directionHistory[step]
+#     next_head = (current_snake[0][0] + dx, current_snake[0][1] + dy)
+#     moved_snake = [next_head] + current_snake
+
+#     if not apple_changed:
+#         moved_snake.pop()
+
+#     collided = (
+#         next_head[0] < 0
+#         or next_head[0] >= sn.GRID_SIZE[0]
+#         or next_head[1] < 0
+#         or next_head[1] >= sn.GRID_SIZE[1]
+#         or next_head in moved_snake[1:]
+#     )
+#     next_reset = next_reset or collided
+
+#     if next_reset:
+#         next_snake = [
+#             tuple(segment) for segment in agent.snakeHistory[step + 1]
+#         ]
+#     elif duplicate_start:
+#         next_snake = current_snake
+#     else:
+#         next_snake = moved_snake
+
+#     canvas.after(
+#         100,
+#         lambda s=step + 1, state=next_snake, count=frame_count:
+#             runAnimation(canvas, s, state, count),
+#     )
+
+def runAnimation(canvas, step=0, frames=None):
     agent = sn.agent
-    frame_count = min(
-        len(agent.snakeHistory),
-        len(agent.appleHistory),
-        len(agent.directionHistory),
-    )
 
-    if frame_count == 0:
+    if frames is None:
+        frames = []
+
+        def append_game(snake_history, apple_history, direction_history):
+            count = min(
+                len(snake_history),
+                len(apple_history),
+                len(direction_history),
+            )
+            if count == 0:
+                return
+
+            if snake_history[0]:
+                current_snake = [
+                    tuple(segment) for segment in snake_history[0]
+                ]
+            else:
+                current_snake = [
+                    (sn.GRID_SIZE[0] / 2, sn.GRID_SIZE[1] / 2)
+                ]
+
+            for index in range(count):
+                # start() records the initial snake before run() records it again.
+                if index == 1:
+                    pass
+                elif index > 1:
+                    dx, dy = direction_history[index - 1]
+                    apple_was_eaten = (
+                        apple_history[index] != apple_history[index - 1]
+                    )
+                    moved_snake = [
+                        (current_snake[0][0] + dx, current_snake[0][1] + dy)
+                    ] + current_snake
+
+                    if not apple_was_eaten:
+                        moved_snake.pop()
+
+                    current_snake = moved_snake
+
+                frames.append(
+                    (tuple(current_snake), tuple(apple_history[index]))
+                )
+
+        for game in agent.GameHistory:
+            if not game.empty:
+                append_game(
+                    list(game["snake"]),
+                    list(game["apple"]),
+                    list(game["direction"]),
+                )
+
+        append_game(
+            list(agent.snakeHistory),
+            list(agent.appleHistory),
+            list(agent.directionHistory),
+        )
+
+    if not frames:
         canvas.delete("all")
         canvas.create_text(
             (canvas.winfo_width() or 600) / 2,
@@ -461,7 +550,7 @@ def runAnimation(canvas, step=0, snake_state=None, previous_state=None, reset_fr
         )
         return
 
-    if step >= frame_count:
+    if step >= len(frames):
         canvas.create_text(
             (canvas.winfo_width() or 600) / 2,
             (canvas.winfo_height() or 600) / 2,
@@ -471,86 +560,54 @@ def runAnimation(canvas, step=0, snake_state=None, previous_state=None, reset_fr
         )
         return
 
-    if snake_state is None:
-        current_snake = [tuple(segment) for segment in agent.snakeHistory[step]]
-    else:
-        current_snake = list(snake_state)
+    current_snake, apple = frames[step]
+
+    canvas.delete("all")
+    sn.canvas_rects.clear()
+    size_x, size_y = sn.SQUARE_SIZE
+
+    # Draw the body; renderSnake draws the head and apple.
+    for sx, sy in current_snake[1:]:
+        canvas.create_rectangle(
+            sx * size_x,
+            sy * size_y,
+            (sx + 1) * size_x,
+            (sy + 1) * size_y,
+            fill=sn.SNAKE_COLOR,
+            outline="black",
+        )
 
     saved_apple = sn.apple
-    sn.apple = agent.appleHistory[step]
+    sn.apple = apple
     try:
-        if step == 0 or reset_frame:
-            canvas.delete("all")
-            sn.canvas_rects.clear()
-            for sx, sy in current_snake:
-                renderSnake(sx, sy, False)
-        else:
-            sx, sy = current_snake[0]
-            renderSnake(sx, sy, False)
-            if agent.appleHistory[step] == agent.appleHistory[step - 1]:
-                tx, ty = previous_state[-1]
-                renderSnake(tx, ty, True)
+        hx, hy = current_snake[0]
+        renderSnake(hx, hy, False)
     finally:
         sn.apple = saved_apple
 
-    if step + 1 < frame_count:
-        next_apple = agent.appleHistory[step + 1]
-        apple_changed = next_apple != agent.appleHistory[step]
-        next_reset = False
-        previous_score = None
-        next_score = None
-
-        if len(agent.scoreHistory) > step + 1:
-            previous_score = agent.scoreHistory[step]
-            next_score = agent.scoreHistory[step + 1]
-            next_reset = next_score < previous_score or (
-                apple_changed and next_score <= previous_score
-            )
-
-        has_step_counts = len(agent.stepsSinceLastApple) > step + 1
-        if (
-            not next_reset
-            and has_step_counts
-            and agent.stepsSinceLastApple[step] > 0
-            and agent.stepsSinceLastApple[step + 1] == 0
-            and (next_score is None or next_score <= previous_score)
-        ):
-            next_reset = True
-
-        duplicate_start = (
-            not apple_changed
-            and previous_score is not None
-            and next_score == previous_score
-            and has_step_counts
-            and agent.stepsSinceLastApple[step] == 0
-            and agent.stepsSinceLastApple[step + 1] == 0
-        )
-
-        if next_reset:
-            next_snake = [
-                tuple(segment) for segment in agent.snakeHistory[step + 1]
-            ]
-        elif duplicate_start:
-            next_snake = current_snake
-        else:
-            dx, dy = agent.directionHistory[step]
-            next_snake = [
-                (current_snake[0][0] + dx, current_snake[0][1] + dy)
-            ] + current_snake
-            if not apple_changed:
-                next_snake.pop()
-
+    if step + 1 < len(frames):
         canvas.after(
             100,
-            lambda s=step + 1, state=next_snake, prev=current_snake, full=next_reset:
-                runAnimation(canvas, s, state, prev, full),
+            lambda s=step + 1, saved_frames=frames:
+                runAnimation(canvas, s, saved_frames),
+        )
+    else:
+        canvas.after(
+            100,
+            lambda: canvas.create_text(
+                (canvas.winfo_width() or 600) / 2,
+                (canvas.winfo_height() or 600) / 2,
+                text="Replay Complete",
+                fill="white",
+                font=("Arial", 12),
+            ),
         )
 
 
 def on_replay():
     
-    # runAnimation(sn.canvas, step=0)
-    pass
+    runAnimation(sn.canvas, step=0)
+    # pass
 
 
 
@@ -574,7 +631,24 @@ showGame.grid(row=0, column=3, padx=(80, 30), pady=5)
 # showGame.grid(row=7, column=5, columnspan=2, padx=1, pady=5, sticky=tk.W)
 
 
+# def updateGUI():
+#     sn.label.config(
+#         text=f"Score: {sn.score} game total: {sn.gameTotal}"
+#     )
 
+#     root.after(100, updateGUI)
+
+
+# def start_training():
+#     training_thread = threading.Thread(
+#         target=sn.run,
+#         args=(True,),
+#         daemon=True
+#     )
+
+#     training_thread.start()
+
+#     updateGUI()
 
 
 # plot function is created for 
@@ -606,7 +680,6 @@ def plot():
 
 
 if sn.gameTotal == 0 :
-    print("vajina") 
     plot()
 # if(sn.gameOver):
     # plot_canvas.draw_idle()
