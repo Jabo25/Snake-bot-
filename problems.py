@@ -80,12 +80,6 @@ def hasEaten(snake_copy1):
 # 20 sewcs second 2000
 class player: 
     def __init__(self, agentType=None, averageScore=0, name=None):
-
-        # self.plotThread = threading.Thread(
-        #     target=self.plotWorker,
-        #     daemon=True
-        # )
-        # self.plotThread.start()
         self.agentType = agentType
         self.averageScore = averageScore
         self.finalScoreList = []
@@ -120,7 +114,6 @@ class player:
         self.norm = "l1"
         # plt.show(block=False)
 
-    
     def addStats(self, snake, apple, stepCount, score, direction):
         # global df, snakeHistory, appleHistory, stepsSinceLastApple, score, stepCount, directionHistory, direction, snake, apple 
         self.snakeHistory.append(snake)
@@ -138,9 +131,6 @@ class player:
         self.directionHistory.clear()
         self.foodDistance.clear()
 
-
-        
-
     def getDistance(self,direction):
         apple = self.appleHistory[-1]
         snake = self.snakeHistory[-1][0]        
@@ -152,7 +142,6 @@ class player:
             return abs(abs(snake[0]-apple[0])**2 + abs(snake[1]-apple[1])**2)
         else:
             return max(abs(snake[0] - apple[0]), abs(snake[1] - apple[1]))
-
 
     def getDirection(self):
         # if(len(self.directionHistory) == 0):
@@ -241,12 +230,12 @@ class player:
         self.df = pd.DataFrame()
         self.gameTotal = self.gameTotal+1
         self.FinalScore = 0 #set final score to 0. 
-
+# 18 seconds vs 15. secs--long = 26 secs vs 16 w new way
         # self.resetPlayer()#might cause major bug later
-        if len(self.scoreHistory) !=0:
-            if self.gameTotal % 10 == 0:
+        # if len(self.scoreHistory) !=0:
+            # if self.gameTotal % 10 == 0:
             # threading.Thread(target=self.makePlot).start()
-                self.makePlot()
+                # self.makePlot()
             # self.makePlot()
         # self.resetPlayer()#resets the player at the end of the game new function might be needed here
         # else:
@@ -263,6 +252,269 @@ class player:
 
 
 
+
+
+class qlearning(player): 
+    def __init__(self, agentType=None, averageScore=0, name=None):
+        self.agentType = agentType
+        self.averageScore = averageScore
+        self.finalScoreList = []
+        self.totalGames = 0
+        self.GameHistory = []
+        self.Name = name
+
+        self.df = pd.DataFrame()
+
+        self.snakeHistory = []
+        self.appleHistory = []  # Stores apple at target time step
+        self.stepsSinceLastApple = []
+        self.scoreHistory = []
+        self.stepCount = 0
+        self.directionHistory = []
+        self.foodDistance = []
+        self.SnakeAfterFood = []  # Stores the snake when it last ate
+        self.AppleList = []  # Stores apple each time it is generated
+        EPSILON = 0.3
+        self.gameTotal = 0
+        self.FinalScore = 0  # Stores apple each time it is generated
+
+        #fun test
+        # self.fig, self.ax = plt.subplots()
+        self.fig, self.ax = plt.subplots(figsize=(3, 2), dpi=80)
+        (self.line,) = self.ax.plot([], [], label="Score")
+
+        # 3. Setup static labels once
+        self.ax.set_title("Score")
+        self.ax.set_xlabel("Game")
+        self.ax.set_ylabel("Score")
+        self.norm = "l1"
+        # plt.show(block=False)
+
+    def addStats(self, snake, apple, stepCount, score, direction):
+        # global df, snakeHistory, appleHistory, stepsSinceLastApple, score, stepCount, directionHistory, direction, snake, apple 
+        self.snakeHistory.append(snake)
+        self.appleHistory.append(apple)
+        self.stepsSinceLastApple.append(stepCount)
+        self.scoreHistory.append(score)
+        self.directionHistory.append(direction)
+        self.foodDistance.append(abs(snake[0][0]-apple[0]) + abs(snake[0][1]-apple[1]))
+        
+    def resetPlayer(self):
+        self.snakeHistory.clear()
+        self.appleHistory.clear()
+        self.stepsSinceLastApple.clear()
+        self.scoreHistory.clear()
+        self.directionHistory.clear()
+        self.foodDistance.clear()
+
+    def getDistance(self,direction):
+        apple = self.appleHistory[-1]
+        snake = self.snakeHistory[-1][0]        
+        snake = (snake[0]+direction[0], snake[1]+direction[1])
+        # return abs(abs(snake[0]-apple[0])**2 + abs(snake[1]-apple[1])**2)
+        if self.norm == "l1":
+            return abs(abs(snake[0] - apple[0]) +  abs(snake[1] - apple[1]))
+        elif self.norm == "l2":
+            return abs(abs(snake[0]-apple[0])**2 + abs(snake[1]-apple[1])**2)
+        else:
+            return max(abs(snake[0] - apple[0]), abs(snake[1] - apple[1]))
+
+    def getDirection(self):
+        # if(len(self.directionHistory) == 0):
+        #     return (0,1)
+        if not self.snakeHistory or not self.snakeHistory[-1]:
+            return (0, 1)
+
+        snake = self.snakeHistory[-1]
+        direction = self.directionHistory[-1]
+        inverseDir = (direction[0]*-1,direction[1]*-1)
+        options = []
+        InverseCase = True
+        directionList = []#[(0,1), (0,-1), (1,0), (-1,0)]
+        if(inverseDir != (0,1)):
+            snake_copy = moveSnake(snake, (0,1))
+            if(not collisionCheck(snake_copy)):
+                options.append(self.getDistance((0,1)))
+                directionList.append((0,1))
+        if(inverseDir != (0,-1)):
+            snake_copy = moveSnake(snake, (0,-1))
+            if(not collisionCheck(snake_copy)):
+                options.append(self.getDistance((0,-1)))
+                directionList.append((0,-1))
+        if(inverseDir != (1,0)):
+            snake_copy = moveSnake(snake, (1,0))
+            if(not collisionCheck(snake_copy)):
+                options.append(self.getDistance((1,0)))
+                directionList.append((1,0))
+        if(inverseDir != (-1,0)):
+            snake_copy = moveSnake(snake, (-1,0))
+            if(not collisionCheck(snake_copy)):
+                options.append(self.getDistance((-1,0)))
+                directionList.append((-1,0))
+
+
+           # consider right and left  IE
+        
+        min = 99999999999999
+        for x,y in zip(options, directionList):
+            if min> x:
+                min = x
+                direction = y
+        if(len(options) == 0):
+            return (0,1)
+        return direction
+
+    def makePlot(self):
+        games = list(range(1, len(self.finalScoreList) + 1))
+
+        self.line.set_xdata(games)
+        self.line.set_ydata(self.finalScoreList)
+
+        self.ax.relim()
+        self.ax.autoscale_view()
+
+        self.fig.canvas.draw_idle()
+
+        return self.fig
+
+    def gameOver(self):
+        #make a plot of progress
+        #print total scores
+        #reset everything
+
+        #what types of plots:
+            # line plot
+            # histogram of the scores
+            # matplotlib.pyplot.plot(*args, scalex=True, scaley=True, data=None, **kwargs)[source]
+        # 12.5 seconds with just this if
+        if(len(self.scoreHistory) != 0):
+            self.finalScoreList.append(self.scoreHistory[-1])
+
+        # 
+        self.df = pd.DataFrame(
+                            {
+                                "snake": self.snakeHistory,
+                                "apple": self.appleHistory,
+                                "stepsSinceLastApple": self.stepsSinceLastApple,
+                                "score": self.scoreHistory,
+                                "direction": self.directionHistory
+                            }
+                        )
+        
+        self.GameHistory.append(self.df)
+       
+        self.df = pd.DataFrame()
+        self.gameTotal = self.gameTotal+1
+        self.FinalScore = 0 #set final score to 0. 
+# 18 seconds vs 15. secs--long = 26 secs vs 16 w new way
+        # self.resetPlayer()#might cause major bug later
+        # if len(self.scoreHistory) !=0:
+            # if self.gameTotal % 10 == 0:
+            # threading.Thread(target=self.makePlot).start()
+                # self.makePlot()
+            # self.makePlot()
+        # self.resetPlayer()#resets the player at the end of the game new function might be needed here
+        # else:
+            # self.fig
+
+        self.resetPlayer()
+
+        # return self.makePlot()
+        
+        # pass
+
+        # second 2000 = 30 seconds
+     
+
+
+
+
+class Qlearning(player):
+    def __init__(self, agentType=None, averageScore=0, name=None):
+        super().__init__(agentType="Qlearning", averageScore=averageScore, name=name)
+        # Add any custom attributes you need here (e.g., tables, hyperparameters)
+
+        #data structure that stores values needed
+        class SA_Pair:
+            def __init__():
+                #Values of actions 
+                Left = 0
+                Right = 0
+                Straight = 0
+
+        # NEW KEY PAIR CODE: dictionary_capitals['State'] = 'SA pair'
+        self.actionTable = {} #makes a dictionary to store the q values
+
+    #checks reward in all directions possible from context of curr state    
+    def getReward():
+
+        # get 4 directions
+        self.getOrientation((0,1))
+
+        self.getOrientation((1,0))
+
+        self.getOrientation((-1,0))
+
+        self.getOrientation((0,-1))
+        
+        
+        pass
+
+    # tells the agent if direction is left right or straight
+    def getOrientation(self, newDirection):
+
+        # straight case is same for all directions
+        if self.direction == newDirection:
+            return "straight"
+    
+        # other cases
+        if(self.direction == (0,1)):
+            if self.direction == (1,0):
+                return "right"
+            elif self.direction == (-1,0):
+                return "left"
+        elif(self.direction == (0,-1)):
+            if self.direction == (-1, 0):
+                return "right"
+            elif self.direction == (1,0):
+                return "left"
+        elif self.direction == (1,0):
+            if self.direction == (0, -1):
+                return "right"
+            elif self.direction == (0, 1):
+                return "left"
+        elif self.direction == (-1,0):
+            if self.direction == (0, 1):
+                return "right"
+            elif self.direction == (0, -1):
+                return "left"
+
+        #u turn case is impossible
+        return "NotPossible"
+
+    # modified to work with q table
+    def addStats(self, snake, apple, stepCount, score, direction):
+        super.addStats(self, snake, apple, stepCount, score, direction)
+        self.actionTable[[tuple(snake), tuple(apple)]] = self.getReward()
+
+        
+        
+
+    
+    def getDirection(self):
+        # Write your own decision logic here
+        # You still have access to self.snakeHistory, self.appleHistory, etc.
+        pass
+
+    def gameOver(self):
+        # Add any end-of-game updates here (optional)
+        super().gameOver()  # Keeps parent's score logging and resetPlayer()
+
+
+
+
+
+# end game->update function->newGa,e
 
 
 
@@ -282,6 +534,10 @@ class player:
 
 
 
+# 10 = 12.66
+# 100=138
+
+# 13 secodns for 10
 
 
 
