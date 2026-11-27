@@ -177,18 +177,6 @@ class player:
             return (0,1)
         return direction
 
-    def makePlot(self):
-        games = list(range(1, len(self.finalScoreList) + 1))
-
-        self.line.set_xdata(games)
-        self.line.set_ydata(self.finalScoreList)
-
-        self.ax.relim()
-        self.ax.autoscale_view()
-
-        self.fig.canvas.draw_idle()
-
-        return self.fig
 
     def gameOver(self):
         #make a plot of progress
@@ -299,6 +287,8 @@ class Qlearning(player):
     
     # tells the agent if direction is left right or straight
     def GlobalToLocalDir(self, newDirection):
+        if not self.directionHistory:
+            return "straight"
         cur = self.directionHistory[-1]
         if cur == newDirection:
             return "straight"
@@ -456,7 +446,17 @@ class Qlearning(player):
         explore = random.randint(0,100)
         decision = None
         # DirectionString = actionValue.GetMaxDirection()
-        DirectionString = self.actionTable[(tuple(snake), tuple(self.appleHistory[-1]), snake[0])].GetMaxDirection()
+        if not self.directionHistory:
+            return (0, 1)
+        if not self.snakeHistory or not self.snakeHistory[-1]:
+            return (0, 1)
+        if self.appleHistory:
+            state_key = (tuple(snake), tuple(self.appleHistory[-1]), snake[0])
+        else:
+            state_key = (tuple(snake), (0, 0), snake[0])
+        if state_key not in self.actionTable:
+            return (0, 1)
+        DirectionString = self.actionTable[state_key].GetMaxDirection()
 
 
 
@@ -835,220 +835,527 @@ class Qlearning(player):
 
 
                                             
-class Qlearning(player):
+# class Qlearning(player):
 
-    def __init__(self, agentType=None, averageScore=0, name=None):
-        super().__init__(agentType="Qlearning", averageScore=averageScore, name=name)
+#     def __init__(self, agentType=None, averageScore=0, name=None):
+#         super().__init__(agentType="Qlearning", averageScore=averageScore, name=name)
 
-        self.actionTable = {}
+#         self.actionTable = {}
 
-        # Epsilon decay
-        self.epsilon = 1.0
-        self.epsilon_min = 0.05
-        self.epsilon_decay = 0.995
+#         # Epsilon decay
+#         self.epsilon = 1.0
+#         self.epsilon_min = 0.05
+#         self.epsilon_decay = 0.995
 
-        # Q-learning parameters
-        self.learningRate = 0.1
-        self.gamma = 0.9
+#         # Q-learning parameters
+#         self.learningRate = 0.1
+#         self.gamma = 0.9
 
-    def addStats(self, snake, apple, stepCount, score, direction):
-        super().addStats(snake, apple, stepCount, score, direction)
+#     def addStats(self, snake, apple, stepCount, score, direction):
+#         super().addStats(snake, apple, stepCount, score, direction)
 
-    class SA_Pair:
-        def __init__(self, left=0, right=0, straight=0):
-            self.left = left
-            self.right = right
-            self.straight = straight
+#     class SA_Pair:
+#         def __init__(self, left=0, right=0, straight=0):
+#             self.left = left
+#             self.right = right
+#             self.straight = straight
 
-        def GetMaxDirection(self):
-            if self.left > self.right and self.left > self.straight:
-                return "left"
-            elif self.right > self.left and self.right > self.straight:
-                return "right"
-            elif self.straight > self.left and self.straight > self.right:
-                return "straight"
-            return "tie"
+#         def GetMaxDirection(self):
+#             if self.left > self.right and self.left > self.straight:
+#                 return "left"
+#             elif self.right > self.left and self.right > self.straight:
+#                 return "right"
+#             elif self.straight > self.left and self.straight > self.right:
+#                 return "straight"
+#             return "tie"
 
-    def GlobalToLocalDir(self, newDirection):
-        cur = self.directionHistory[-1]
+#     def GlobalToLocalDir(self, newDirection):
+#         cur = self.directionHistory[-1]
 
-        if cur == newDirection:
-            return "straight"
+#         if cur == newDirection:
+#             return "straight"
 
-        if cur == (0, 1):
-            if newDirection == (1, 0):
-                return "right"
-            elif newDirection == (-1, 0):
-                return "left"
+#         if cur == (0, 1):
+#             if newDirection == (1, 0):
+#                 return "right"
+#             elif newDirection == (-1, 0):
+#                 return "left"
 
-        elif cur == (0, -1):
-            if newDirection == (-1, 0):
-                return "right"
-            elif newDirection == (1, 0):
-                return "left"
+#         elif cur == (0, -1):
+#             if newDirection == (-1, 0):
+#                 return "right"
+#             elif newDirection == (1, 0):
+#                 return "left"
 
-        elif cur == (1, 0):
-            if newDirection == (0, -1):
-                return "right"
-            elif newDirection == (0, 1):
-                return "left"
+#         elif cur == (1, 0):
+#             if newDirection == (0, -1):
+#                 return "right"
+#             elif newDirection == (0, 1):
+#                 return "left"
 
-        elif cur == (-1, 0):
-            if newDirection == (0, 1):
-                return "right"
-            elif newDirection == (0, -1):
-                return "left"
+#         elif cur == (-1, 0):
+#             if newDirection == (0, 1):
+#                 return "right"
+#             elif newDirection == (0, -1):
+#                 return "left"
 
-        return "straight"
+#         return "straight"
 
-    def LocalToGlobalDir(self, newDirection):
-        cur = self.directionHistory[-1]
+#     def LocalToGlobalDir(self, newDirection):
+#         cur = self.directionHistory[-1]
 
-        if newDirection == "straight":
-            return cur
+#         if newDirection == "straight":
+#             return cur
 
-        if cur == (0, 1):
-            if newDirection == "right":
-                return (1, 0)
-            elif newDirection == "left":
-                return (-1, 0)
+#         if cur == (0, 1):
+#             if newDirection == "right":
+#                 return (1, 0)
+#             elif newDirection == "left":
+#                 return (-1, 0)
 
-        elif cur == (0, -1):
-            if newDirection == "right":
-                return (-1, 0)
-            elif newDirection == "left":
-                return (1, 0)
+#         elif cur == (0, -1):
+#             if newDirection == "right":
+#                 return (-1, 0)
+#             elif newDirection == "left":
+#                 return (1, 0)
 
-        elif cur == (1, 0):
-            if newDirection == "right":
-                return (0, -1)
-            elif newDirection == "left":
-                return (0, 1)
+#         elif cur == (1, 0):
+#             if newDirection == "right":
+#                 return (0, -1)
+#             elif newDirection == "left":
+#                 return (0, 1)
 
-        elif cur == (-1, 0):
-            if newDirection == "right":
-                return (0, 1)
-            elif newDirection == "left":
-                return (0, -1)
+#         elif cur == (-1, 0):
+#             if newDirection == "right":
+#                 return (0, 1)
+#             elif newDirection == "left":
+#                 return (0, -1)
 
-        return cur
+#         return cur
 
-    def GetStateValue(self, snake):
-        key = (tuple(snake), tuple(self.appleHistory[-1]), snake[0])
+#     def GetStateValue(self, snake):
+#         key = (tuple(snake), tuple(self.appleHistory[-1]), snake[0])
 
-        Q_value = self.actionTable.get(key)
+#         Q_value = self.actionTable.get(key)
 
-        if Q_value is None:
-            self.actionTable[key] = self.__class__.SA_Pair()
-            Q_value = self.actionTable[key]
+#         if Q_value is None:
+#             self.actionTable[key] = self.__class__.SA_Pair()
+#             Q_value = self.actionTable[key]
 
-        return max(Q_value.right, Q_value.left, Q_value.straight)
+#         return max(Q_value.right, Q_value.left, Q_value.straight)
 
-    def GetActionValue(self, snake_copy):
-        GoLeft = self.LocalToGlobalDir("left")
-        GoRight = self.LocalToGlobalDir("right")
-        GoStraight = self.LocalToGlobalDir("straight")
+#     def GetActionValue(self, snake_copy):
+#         GoLeft = self.LocalToGlobalDir("left")
+#         GoRight = self.LocalToGlobalDir("right")
+#         GoStraight = self.LocalToGlobalDir("straight")
 
-        Q_Table_Left = self.GetStateValue(moveSnake(snake_copy, GoLeft))
-        Q_Table_Right = self.GetStateValue(moveSnake(snake_copy, GoRight))
-        Q_Table_Straight = self.GetStateValue(moveSnake(snake_copy, GoStraight))
+#         Q_Table_Left = self.GetStateValue(moveSnake(snake_copy, GoLeft))
+#         Q_Table_Right = self.GetStateValue(moveSnake(snake_copy, GoRight))
+#         Q_Table_Straight = self.GetStateValue(moveSnake(snake_copy, GoStraight))
 
-        return self.__class__.SA_Pair(
-            Q_Table_Left,
-            Q_Table_Right,
-            Q_Table_Straight
-        )
+#         return self.__class__.SA_Pair(
+#             Q_Table_Left,
+#             Q_Table_Right,
+#             Q_Table_Straight
+#         )
 
-    def GetNextReward(self, snake_copy):
-        apple = self.appleHistory[-1]
+#     def GetNextReward(self, snake_copy):
+#         apple = self.appleHistory[-1]
 
-        if hasEaten(snake_copy, apple):
-            return 10
-        elif collisionCheck(snake_copy):
-            return -10
+#         if hasEaten(snake_copy, apple):
+#             return 10
+#         elif collisionCheck(snake_copy):
+#             return -10
 
-        return 0
+#         return 0
 
-    def getDirection(self):
+#     def getDirection(self):
 
-        snake = self.snakeHistory[-1]
+#         snake = self.snakeHistory[-1]
 
-        Qpi = self.GetStateValue(snake)
-        actionValue = self.GetActionValue(snake)
+#         Qpi = self.GetStateValue(snake)
+#         actionValue = self.GetActionValue(snake)
 
-        R = 0
-        decision = None
+#         R = 0
+#         decision = None
 
-        # Choose whether to explore or exploit
-        explore = random.random()
+#         # Choose whether to explore or exploit
+#         explore = random.random()
 
-        DirectionString = actionValue.GetMaxDirection()
+#         DirectionString = actionValue.GetMaxDirection()
 
-        if explore < self.epsilon:
+#         if explore < self.epsilon:
 
-            # EXPLORE
-            god = random.randint(1, 3)
+#             # EXPLORE
+#             god = random.randint(1, 3)
 
-            def GetRandom(c=0, choice=None):
+#             def GetRandom(c=0, choice=None):
 
-                nonlocal R
+#                 nonlocal R
 
-                g = ((choice + c) % 3) + 1
+#                 g = ((choice + c) % 3) + 1
 
-                if g == 1:
-                    decision = self.LocalToGlobalDir("left")
-                elif g == 2:
-                    decision = self.LocalToGlobalDir("right")
-                else:
-                    decision = self.LocalToGlobalDir("straight")
+#                 if g == 1:
+#                     decision = self.LocalToGlobalDir("left")
+#                 elif g == 2:
+#                     decision = self.LocalToGlobalDir("right")
+#                 else:
+#                     decision = self.LocalToGlobalDir("straight")
 
-                R = self.GetNextReward(moveSnake(snake, decision))
+#                 R = self.GetNextReward(moveSnake(snake, decision))
 
-                if R < 0 and c < 2:
-                    return GetRandom(c + 1, choice)
+#                 if R < 0 and c < 2:
+#                     return GetRandom(c + 1, choice)
 
-                return decision, R
+#                 return decision, R
 
-            decision, R = GetRandom(0, god)
+#             decision, R = GetRandom(0, god)
 
-        else:
+#         else:
 
-            # EXPLOIT
-            if DirectionString == "tie":
-                decision = super().getDirection()
-            else:
-                decision = self.LocalToGlobalDir(DirectionString)
+#             # EXPLOIT
+#             if DirectionString == "tie":
+#                 decision = super().getDirection()
+#             else:
+#                 decision = self.LocalToGlobalDir(DirectionString)
 
-            R = self.GetNextReward(moveSnake(snake, decision))
+#             R = self.GetNextReward(moveSnake(snake, decision))
 
-        # Q-learning update
-        DecisionString = self.GlobalToLocalDir(decision)
+#         # Q-learning update
+#         DecisionString = self.GlobalToLocalDir(decision)
 
-        key = (tuple(snake), tuple(self.appleHistory[-1]), snake[0])
+#         key = (tuple(snake), tuple(self.appleHistory[-1]), snake[0])
 
-        LearningStep = self.actionTable[key]
+#         LearningStep = self.actionTable[key]
 
-        old_q = getattr(LearningStep, DecisionString)
+#         old_q = getattr(LearningStep, DecisionString)
 
-        next_value = getattr(actionValue, DecisionString)
+#         next_value = getattr(actionValue, DecisionString)
 
-        # Terminal state
-        if R == -10:
-            next_value = 0
+#         # Terminal state
+#         if R == -10:
+#             next_value = 0
 
-        new_q = old_q + self.learningRate * (
-            R + self.gamma * next_value - old_q
-        )
+#         new_q = old_q + self.learningRate * (
+#             R + self.gamma * next_value - old_q
+#         )
 
-        setattr(LearningStep, DecisionString, new_q)
+#         setattr(LearningStep, DecisionString, new_q)
 
-        # EPSILON DECAY
-        self.epsilon = max(
-            self.epsilon_min,
-            self.epsilon * self.epsilon_decay
-        )
+#         # EPSILON DECAY
+#         self.epsilon = max(
+#             self.epsilon_min,
+#             self.epsilon * self.epsilon_decay
+#         )
 
-        return decision
+#         return decision
 
-    def gameOver(self):
-        super().gameOver()
+#     def gameOver(self):
+#         super().gameOver()
+
+
+
+
+
+# # fucking big penis energy
+
+# import threading
+# import random
+# import pandas as pd
+# import tkinter as tk
+# # import keyboard
+# import time
+# import problems as st
+
+
+# # pip3 install plot
+# #pip3 install pandas
+# # pip3 install keyboard
+# # set environment constants
+
+
+# import faulthandler
+
+# faulthandler.dump_traceback_later(10, repeat=True)
+# # set environment constants
+# GRID_SIZE = (50,50)
+# RESOLUTION = (600,600)
+# SQUARE_SIZE = (RESOLUTION[0]/(GRID_SIZE[0]),RESOLUTION[1]/(GRID_SIZE[1])) #body seg size
+# SPEED = 0
+# EPOCHS = 100
+# EPSILON = 1
+# GAMMA = 0
+# #make screen appear
+# SNAKE_COLOR = "#00FF00"
+# FOOD_COLOR = "#FF0000"
+# BG_COLOR = "#000000"
+# gameTotal = 0
+# show = True
+# window = tk.Tk()
+# window.title("Snake Game")
+# window.resizable(False, False)
+# label = tk.Label(window, text=f"Score: {0} game total:{0} ", font=("Consolas", 20))
+# label.pack()
+# canvas = tk.Canvas(window, bg=BG_COLOR, height=RESOLUTION[1], width=RESOLUTION[0])
+# canvas.pack()
+# canvas_rects = {}
+# apple_rect_id = None
+# show = False
+
+
+
+# # window.update()
+# reset = False # tells game to reset in the game loop. 
+# #game controller (stores current vars agent stores curr + past vars)
+
+
+# snake = [(GRID_SIZE[0]/2, GRID_SIZE[1]/2)]
+# tail = snake[-1]
+# apple = ()
+# score = 0
+# direction = (0,1)
+# gamesPlayed = 0
+
+# #extra statistics for the snake
+# agent = st.Qlearning()#make player object
+
+# #reset environment/restart game vars(locks)
+# state = False
+# gameOver = False
+
+
+
+
+
+# #takes keyboard inputa and moves the snake
+# def getDirection(event):
+#     global direction, agent
+#     if(direction == "up"):
+#         if event.keysym == "Left" and direction != (1, 0):
+#             direction = (-1, 0)
+#         elif event.keysym == "Right" and direction != (-1, 0):
+#             direction = (1, 0)
+#         elif event.keysym == "Up" and direction != (0, 1):
+#             direction = (0, -1)
+#         elif event.keysym == "Down" and direction != (0, -1):
+#             direction = (0, 1)
+        
+#     direction = agent.getDirection()
+#     return direction
+
+# #modes the snake in most recent direction
+# def moveSnake(snake_clone, dir_clone):
+#     global snake, direction, tail
+
+
+#     head = snake[0]
+#     tail = snake[-1]
+#     snake.pop()
+#     snake.insert(0, (head[0]+direction[0], head[1]+direction[1]))
+#     # if(show):
+#         # renderSnake(snake[0][0],snake[0][1], False)
+
+        
+#     return snake
+
+    
+
+# #this function checks for collisions which would end the game  
+# def collisionCheck(snake_clone):
+#     global gameTotal
+#     global snake
+#     if(snake_clone == None):
+#         snake_clone = snake
+#     collision = False
+#     for index, x in enumerate(snake_clone):
+#         if index != 0:
+#             if snake_clone[0] == x:
+#                 collision = True
+#     if snake_clone[0][0] < 0 or snake_clone[0][0] >= GRID_SIZE[0] or snake_clone[0][1] < 0 or snake_clone[0][1] >= GRID_SIZE[1]:
+#         collision = True
+#     if collision == True:
+#         gameTotal = gameTotal+1
+#         print("game over", gameTotal)
+#     elif len(snake) == GRID_SIZE[0]*GRID_SIZE[1]:
+#         gameTotal = gameTotal+1
+#         collision = True
+#         print("You won", gameTotal)
+    
+    
+#     return collision
+            
+# #generates a new apple            
+# def makeApple():
+#     global apple
+#     while True:
+#         apple = (random.randint(0, GRID_SIZE[0]-1), random.randint(0, GRID_SIZE[1]-1))
+#         if apple not in snake:
+#             break
+#     agent.AppleList.append(apple)
+#     # if(len(snake) == GRID_SIZE[0]**2):
+
+
+
+
+
+
+# #has eaten an apple and gets score
+# def hasEaten(snake_copy):
+#     global snake, apple, tail, score, stepCount, gameOver
+#     if snake_copy == None:
+#         if snake[0] == apple:
+#             snake.append(tail)
+#             # renderSnake(tail[0], tail[1], False)
+#             if len(snake) == GRID_SIZE[0]*GRID_SIZE[1]:
+#                 print("you won")
+
+#                 gameOver = True  # ← ends the game
+#                 return stepCount, score  # ← stops hasEaten
+#             else:
+#                 makeApple()
+#                 score = score+10 
+#                 stepCount = 0
+#         else:
+#             stepCount = stepCount+1
+#             # renderSnake(tail[0],tail[1], True)
+#         return stepCount, score
+#     else:
+#         if snake_copy[0] == apple:
+#             return True
+#         else:
+#             return False
+            
+
+# #initialize to starting state
+# def start():
+#     global tail, snake, apple, score, direction, plot, stepCount, reset
+
+
+#     # canvas.delete("all")
+#     # window.update()
+#     snake.append((GRID_SIZE[0]/2, GRID_SIZE[1]/2))
+#     while(len(snake) != 0):
+#         snake.pop()
+#     snake.append((GRID_SIZE[0]/2, GRID_SIZE[1]/2))
+#     tail = snake[-1]
+#     score = 0
+#     direction = (0,1)
+#     makeApple()
+#     agent.addStats(snake, apple, stepCount, score, direction)
+#     snake = [(GRID_SIZE[0] / 2, GRID_SIZE[1] / 2)]
+#     tail = snake[-1]
+#     score = 0
+#     direction = (0, 1)
+#     stepCount = 0
+#     reset = False # when start game is presssed finishes reset. 
+
+
+    
+#     # plot = agent.gameOver() #returns the plot object so that the gui doesn't have a null object for the plot. might break stuff?
+
+
+# def run(first):
+#     global state, x, y, snake, apple, score, gameOver, direction, stepCount, plot, reset
+#     if(first):
+#         start()
+#         first = False
+
+#     if not reset:
+#         if(state == False):
+#             moveSnake(None, None)
+#             stepCount, score = hasEaten(None)
+#             gameOver = collisionCheck(None)
+#             state = True
+#         if state == True:
+#             state = False
+#         agent.addStats(snake, apple, stepCount, score, direction)
+
+#         while gameOver == True:
+#             if(gameTotal < EPOCHS):
+#                 agent.gameOver()
+#                 start()
+#                 gameOver = False
+#             break
+
+#     if gameTotal < EPOCHS:
+#         window.after(SPEED, lambda: run(False))
+    
+# #resets training and everything back to its original state. 
+# def reset():
+#     global GRID_SIZE, RESOLUTION, SQUARE_SIZE, SPEED, reset, score, direction, gamesPlayed, gameTotal, show, window, label, canvas, snake, tail, apple
+#     # GRID_SIZE = (50,50)
+#     # RESOLUTION = (600,600)
+#     # SQUARE_SIZE = (RESOLUTION[0]/(GRID_SIZE[0]),RESOLUTION[1]/(GRID_SIZE[1])) #body seg size
+#     SPEED = 100 
+#     gameTotal = 0
+#     score = 0
+#     # # while(len(snake) != 0):
+#     # #     snake.pop()
+#     # # snake = [(GRID_SIZE[0]/2, GRID_SIZE[1]/2)]
+#     # # canvas.pack()
+#     # # window.update()
+
+#     # #game controller (stores current vars agent stores curr + past vars)
+#     # # tail = snake[-1]
+#     # # apple = ()
+#     # # direction = (0,1)
+#     # score = 0
+#     # gamesPlayed = 0
+#     reset = True
+#     agent.resetPlayer() #this was a big redundancy headache i neeed to fix
+
+
+
+# stepCount = 0
+
+
+
+
+# #render the snake. Will be replaced with render every 1000 turns
+# # def renderSnake(x,y, remove):
+    
+# #     global  color, canvas_rects, apple_rect_id, apple
+
+# #     if apple_rect_id is not None:
+# #         canvas.delete(apple_rect_id)
+# #     pixel_x = SQUARE_SIZE[0] * apple[0]
+# #     pixel_y = SQUARE_SIZE[1] * apple[1]
+# #     apple_rect_id = canvas.create_rectangle(
+# #         pixel_x, pixel_y,
+# #         pixel_x + SQUARE_SIZE[0], pixel_y + SQUARE_SIZE[1],
+# #         fill=FOOD_COLOR
+# #     )
+# #     pixel_x = SQUARE_SIZE[0] * x
+# #     pixel_y = SQUARE_SIZE[1] * y
+
+# #     if not remove:
+# #         rect_id = canvas.create_rectangle(
+# #             pixel_x,
+# #             pixel_y,
+# #             pixel_x + SQUARE_SIZE[0],
+# #             pixel_y + SQUARE_SIZE[1],
+# #             fill=SNAKE_COLOR
+# #         )
+# #         canvas_rects[(x, y)] = rect_id
+# #         # canvas.create_rectangle(
+# #         #     pixel_x,
+# #         #     pixel_y,
+# #         #     pixel_x + SQUARE_SIZE[0],
+# #         #     pixel_y + SQUARE_SIZE[1],
+# #         #     fill=SNAKE_COLOR
+# #         # )
+# #     else:
+# #         # pygame.draw.rect(surface, (0,0,0), rect)
+# #         rect_id = canvas_rects.pop((x, y), None)
+# #         canvas.create_rectangle(
+# #             pixel_x,
+# #             pixel_y,
+# #             pixel_x + SQUARE_SIZE[0],
+# #             pixel_y + SQUARE_SIZE[1],
+# #             fill=BG_COLOR,
+# #             outline=BG_COLOR
+# #         )
+# #         if rect_id is not None:
+# #             canvas.delete(rect_id)
+
+# # window.mainloop()
